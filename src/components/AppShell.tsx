@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-dvh">
-      {/* Background layer fixed — evita divisão visual quando a página cresce */}
+      {/* Background layer fixed */}
       <div className="fixed inset-0 -z-10 gradient-hero" aria-hidden />
 
       {/* Sidebar */}
@@ -79,7 +79,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="hidden lg:block" />
           <ThemeToggle />
         </header>
-        <main className="px-4 md:px-8 py-6 animate-fade-up">{children}</main>
+        <main className="px-4 md:px-8 py-6">
+          <div className="animate-fade-up">{children}</div>
+        </main>
       </div>
     </div>
   );

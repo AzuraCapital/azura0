@@ -224,8 +224,11 @@ export type Database = {
       }
       calendar_events: {
         Row: {
+          amount: number | null
           category: string | null
           created_at: string
+          custom_type: string | null
+          direction: string | null
           event_date: string
           expected_amount: number | null
           id: string
@@ -236,8 +239,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          amount?: number | null
           category?: string | null
           created_at?: string
+          custom_type?: string | null
+          direction?: string | null
           event_date: string
           expected_amount?: number | null
           id?: string
@@ -248,8 +254,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          amount?: number | null
           category?: string | null
           created_at?: string
+          custom_type?: string | null
+          direction?: string | null
           event_date?: string
           expected_amount?: number | null
           id?: string
@@ -559,6 +568,7 @@ export type Database = {
           id: string
           income_category_id: string | null
           payment_method: string | null
+          source_event_id: string | null
           transaction_date: string
           type: string
           updated_at: string
@@ -573,6 +583,7 @@ export type Database = {
           id?: string
           income_category_id?: string | null
           payment_method?: string | null
+          source_event_id?: string | null
           transaction_date: string
           type: string
           updated_at?: string
@@ -587,6 +598,7 @@ export type Database = {
           id?: string
           income_category_id?: string | null
           payment_method?: string | null
+          source_event_id?: string | null
           transaction_date?: string
           type?: string
           updated_at?: string
@@ -612,6 +624,13 @@ export type Database = {
             columns: ["income_category_id"]
             isOneToOne: false
             referencedRelation: "income_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_source_event_id_fkey"
+            columns: ["source_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
             referencedColumns: ["id"]
           },
         ]

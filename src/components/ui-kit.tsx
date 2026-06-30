@@ -4,13 +4,15 @@ import { X } from "lucide-react";
 export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto bg-background/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="glass rounded-3xl w-full max-w-lg my-auto animate-fade-up flex flex-col max-h-[calc(100vh-2rem)]" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-6 pb-4 border-b border-border/40 shrink-0">
-          <h2 className="text-xl font-bold">{title}</h2>
-          <button onClick={onClose} className="rounded-full p-2 hover:bg-secondary"><X className="h-4 w-4" /></button>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-background/70 backdrop-blur-sm" onClick={onClose}>
+      <div className="min-h-full flex items-start sm:items-center justify-center p-4">
+        <div className="glass rounded-3xl w-full max-w-lg animate-fade-up flex flex-col max-h-[calc(100dvh-2rem)] my-auto" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-5 pb-4 border-b border-border/40 shrink-0">
+            <h2 className="text-lg sm:text-xl font-bold">{title}</h2>
+            <button onClick={onClose} className="rounded-full p-2 hover:bg-secondary"><X className="h-4 w-4" /></button>
+          </div>
+          <div className="p-5 overflow-y-auto">{children}</div>
         </div>
-        <div className="p-6 overflow-y-auto">{children}</div>
       </div>
     </div>
   );
@@ -48,11 +50,50 @@ export function GhostButton({ children, ...rest }: React.ButtonHTMLAttributes<HT
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
-      <div>
-        <h1 className="text-3xl font-bold">{title}</h1>
-        {subtitle && <p className="text-muted-foreground mt-1">{subtitle}</p>}
+      <div className="min-w-0">
+        <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
+        {subtitle && <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>}
       </div>
       {action}
     </div>
+  );
+}
+
+/** Select com opção "Outro..." que revela input livre. */
+export function SelectWithCustom({
+  label, value, onChange, options, placeholder = "Selecionar...", customLabel = "Outro...",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  customLabel?: string;
+}) {
+  const isCustom = value !== "" && !options.some(o => o.value === value);
+  return (
+    <Field label={label}>
+      <div className="space-y-2">
+        <SelectInput
+          value={isCustom ? "__custom__" : value}
+          onChange={e => {
+            if (e.target.value === "__custom__") onChange(" ");
+            else onChange(e.target.value);
+          }}
+        >
+          <option value="">{placeholder}</option>
+          {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          <option value="__custom__">{customLabel}</option>
+        </SelectInput>
+        {isCustom && (
+          <TextInput
+            autoFocus
+            value={value.trim() === "" ? "" : value}
+            placeholder="Escreva o nome personalizado"
+            onChange={e => onChange(e.target.value || " ")}
+          />
+        )}
+      </div>
+    </Field>
   );
 }

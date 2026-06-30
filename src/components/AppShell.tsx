@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 import {
-  LayoutDashboard, PiggyBank, TrendingUp, Landmark, Target, Receipt, Calendar, Settings, LogOut, Menu,
+  LayoutDashboard, TrendingUp, Landmark, Target, Receipt, Calendar, Settings, LogOut, Menu, History,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -10,12 +10,12 @@ import { useState } from "react";
 
 const nav = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/app/patrimonio", label: "Património", icon: PiggyBank },
   { to: "/app/investimentos", label: "Investimentos", icon: TrendingUp },
   { to: "/app/bancos", label: "Bancos", icon: Landmark },
   { to: "/app/objetivos", label: "Objetivos", icon: Target },
   { to: "/app/financas", label: "Finanças Pessoais", icon: Receipt },
   { to: "/app/calendario", label: "Calendário", icon: Calendar },
+  { to: "/app/historico", label: "Histórico", icon: History },
   { to: "/app/definicoes", label: "Definições", icon: Settings },
 ] as const;
 
@@ -33,7 +33,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen gradient-hero">
+    <div className="relative min-h-dvh">
+      {/* Background layer fixed — evita divisão visual quando a página cresce */}
+      <div className="fixed inset-0 -z-10 gradient-hero" aria-hidden />
+
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
         <div className="p-5 border-b border-sidebar-border">

@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppPatrimonioRouteImport } from './routes/_authenticated/app.patrimonio'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -39,17 +40,25 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/app/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppPatrimonioRoute =
+  AuthenticatedAppPatrimonioRouteImport.update({
+    id: '/app/patrimonio',
+    path: '/app/patrimonio',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesById {
@@ -58,19 +67,26 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/_authenticated/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/auth/reset-password' | '/app/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/auth/reset-password'
+    | '/app/patrimonio'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/auth/reset-password' | '/app'
+  to: '/' | '/auth' | '/auth/reset-password' | '/app/patrimonio' | '/app'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/auth/reset-password'
+    | '/_authenticated/app/patrimonio'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
 }
@@ -117,14 +133,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/patrimonio': {
+      id: '/_authenticated/app/patrimonio'
+      path: '/app/patrimonio'
+      fullPath: '/app/patrimonio'
+      preLoaderRoute: typeof AuthenticatedAppPatrimonioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppPatrimonioRoute: typeof AuthenticatedAppPatrimonioRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppPatrimonioRoute: AuthenticatedAppPatrimonioRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
 

@@ -50,7 +50,10 @@ function Page() {
 
       <div className="glass rounded-3xl p-6 space-y-4">
         <h2 className="font-semibold">Perfil</h2>
-        <Field label="Nome completo"><TextInput value={fullName} onChange={e => setFullName(e.target.value)} /></Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Primeiro nome"><TextInput value={firstName} onChange={e => setFirstName(e.target.value)} /></Field>
+          <Field label="Último nome"><TextInput value={lastName} onChange={e => setLastName(e.target.value)} /></Field>
+        </div>
         <Field label="Email"><TextInput value={user?.email ?? ""} disabled /></Field>
         {user?.phone && <Field label="Telefone"><TextInput value={user.phone} disabled /></Field>}
         <PrimaryButton onClick={save} disabled={saving}>Guardar</PrimaryButton>

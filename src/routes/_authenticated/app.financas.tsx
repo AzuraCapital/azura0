@@ -23,7 +23,7 @@ function Page() {
   const { data: txns } = useQuery({
     queryKey: ["transactions", user?.id],
     enabled: !!user,
-    queryFn: async () => (await supabase.from("transactions").select("*, income_categories(name, color), expense_categories(name, color), bank_accounts(account_name)").order("transaction_date", { ascending: false }).limit(100)).data ?? [],
+    queryFn: async () => (await supabase.from("transactions").select("*, income_categories(name, color), expense_categories(name, color), bank_accounts(account_name)").order("transaction_date", { ascending: false }).limit(200)).data ?? [],
   });
 
   const filtered = (txns ?? []).filter((t: any) => tab === "todos" || t.type === tab);
@@ -49,7 +49,7 @@ function Page() {
         <StatCard label="Saldo (mês)" value={formatKz(rec - desp)} icon={ArrowUpCircle} color={rec - desp >= 0 ? "success" : "destructive"} />
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {(["todos", "receita", "despesa"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${tab === t ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
         ))}
@@ -63,18 +63,18 @@ function Page() {
             {filtered.map((t: any) => {
               const cat = t.type === "receita" ? t.income_categories : t.expense_categories;
               return (
-                <div key={t.id} className="flex items-center gap-4 p-4 hover:bg-secondary/40 transition">
-                  <div className={`rounded-full p-2.5 ${t.type === "receita" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+                <div key={t.id} className="flex items-center gap-3 p-4 hover:bg-secondary/40 transition">
+                  <div className={`rounded-full p-2.5 shrink-0 ${t.type === "receita" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
                     {t.type === "receita" ? <ArrowUpCircle className="h-5 w-5" /> : <ArrowDownCircle className="h-5 w-5" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{t.description || cat?.name || "Sem descrição"}</div>
-                    <div className="text-xs text-muted-foreground">{cat?.name} · {formatDate(t.transaction_date)} {t.bank_accounts && `· ${t.bank_accounts.account_name}`}</div>
+                    <div className="text-xs text-muted-foreground truncate">{cat?.name} · {formatDate(t.transaction_date)} {t.bank_accounts && `· ${t.bank_accounts.account_name}`}</div>
                   </div>
-                  <div className={`font-semibold ${t.type === "receita" ? "text-success" : "text-destructive"}`}>
+                  <div className={`font-semibold text-right shrink-0 ${t.type === "receita" ? "text-success" : "text-destructive"}`}>
                     {t.type === "receita" ? "+" : "-"}{formatKz(t.amount)}
                   </div>
-                  <button onClick={() => del(t.id)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => del(t.id)} className="text-muted-foreground hover:text-destructive p-1 shrink-0"><Trash2 className="h-4 w-4" /></button>
                 </div>
               );
             })}
@@ -88,32 +88,46 @@ function Page() {
 }
 
 function StatCard({ label, value, icon: Icon, color }: any) {
+  const colorClass = color === "success" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive";
   return (
     <div className="glass rounded-3xl p-5">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <div className={`rounded-full p-2 bg-${color}/10 text-${color}`}><Icon className="h-4 w-4" /></div>
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <span className="text-xs text-muted-foreground truncate">{label}</span>
+        <div className={`rounded-full p-2 shrink-0 ${colorClass}`}><Icon className="h-4 w-4" /></div>
       </div>
-      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-xl sm:text-2xl font-bold truncate">{value}</div>
     </div>
   );
 }
 
 function TxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [form, setForm] = useState({ type: "despesa" as "despesa" | "receita", amount: "", description: "", transaction_date: format(new Date(), "yyyy-MM-dd"), category_id: "", bank_account_id: "" });
+  const [newCat, setNewCat] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const table = form.type === "receita" ? "income_categories" : "expense_categories";
   const { data: cats } = useQuery({
     queryKey: ["cats", form.type, user?.id],
     enabled: !!user && open,
-    queryFn: async () => (await supabase.from(form.type === "receita" ? "income_categories" : "expense_categories").select("*").order("name")).data ?? [],
+    queryFn: async () => (await supabase.from(table).select("*").order("name")).data ?? [],
   });
   const { data: accounts } = useQuery({
     queryKey: ["accs", user?.id],
     enabled: !!user && open,
     queryFn: async () => (await supabase.from("bank_accounts").select("id, account_name, bank_name").order("account_name")).data ?? [],
   });
+
+  const addCat = async () => {
+    if (!user || !newCat.trim()) return;
+    const { data, error } = await supabase.from(table).insert({ user_id: user.id, name: newCat.trim() } as never).select().single();
+    if (error) return toast.error(error.message);
+    setNewCat("");
+    await qc.invalidateQueries({ queryKey: ["cats", form.type] });
+    if (data) setForm(f => ({ ...f, category_id: (data as any).id }));
+    toast.success("Categoria criada");
+  };
 
   const save = async () => {
     if (!user || !form.amount || !form.category_id) { toast.error("Preencha os campos obrigatórios"); return; }
@@ -145,10 +159,16 @@ function TxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
           ))}
         </div>
         <Field label="Valor (Kz)"><TextInput type="number" step="any" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></Field>
-        <Field label="Categoria"><SelectInput value={form.category_id} onChange={e => setForm({ ...form, category_id: e.target.value })}>
-          <option value="">Selecionar...</option>
-          {(cats ?? []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </SelectInput></Field>
+        <Field label="Categoria">
+          <SelectInput value={form.category_id} onChange={e => setForm({ ...form, category_id: e.target.value })}>
+            <option value="">Selecionar...</option>
+            {(cats ?? []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </SelectInput>
+          <div className="flex gap-2 mt-2">
+            <TextInput placeholder="+ Nova categoria" value={newCat} onChange={e => setNewCat(e.target.value)} />
+            <GhostButton onClick={addCat} type="button">Criar</GhostButton>
+          </div>
+        </Field>
         <Field label="Conta (opcional)"><SelectInput value={form.bank_account_id} onChange={e => setForm({ ...form, bank_account_id: e.target.value })}>
           <option value="">—</option>
           {(accounts ?? []).map((a: any) => <option key={a.id} value={a.id}>{a.bank_name} — {a.account_name}</option>)}

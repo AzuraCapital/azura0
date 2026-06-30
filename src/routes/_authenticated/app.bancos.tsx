@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatKz } from "@/lib/format";
-import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput } from "@/components/ui-kit";
+import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, SelectWithCustom } from "@/components/ui-kit";
 import { Plus, Trash2, Landmark } from "lucide-react";
 import { toast } from "sonner";
 
@@ -12,6 +12,8 @@ export const Route = createFileRoute("/_authenticated/app/bancos")({
   head: () => ({ meta: [{ title: "Bancos — Azura Capital" }] }),
   component: Page,
 });
+
+const BANCOS_ANGOLA = ["BAI", "BFA", "BIC", "BPC", "BCI", "BCGA", "Atlântico", "Standard Bank", "Millennium Atlântico", "Sol", "Keve", "Yetu"];
 
 function Page() {
   const { user } = useAuth();
@@ -36,10 +38,10 @@ function Page() {
       <PageHeader title="Contas Bancárias" subtitle="Saldos e movimentos" action={<PrimaryButton onClick={() => setOpen(true)}><Plus className="h-4 w-4 inline mr-1" /> Nova Conta</PrimaryButton>} />
 
       <div className="glass rounded-3xl p-6 flex items-center gap-4">
-        <div className="rounded-full p-3 bg-primary/10 text-primary"><Landmark className="h-6 w-6" /></div>
-        <div>
+        <div className="rounded-full p-3 bg-primary/10 text-primary shrink-0"><Landmark className="h-6 w-6" /></div>
+        <div className="min-w-0">
           <div className="text-xs text-muted-foreground">Saldo total</div>
-          <div className="text-3xl font-bold">{formatKz(total)}</div>
+          <div className="text-2xl sm:text-3xl font-bold truncate">{formatKz(total)}</div>
         </div>
       </div>
 
@@ -48,12 +50,12 @@ function Page() {
         {(accounts ?? []).map((a: any) => (
           <div key={a.id} className="glass rounded-3xl p-5 hover:scale-[1.01] transition">
             <div className="flex items-start justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-wide text-primary font-medium">{a.bank_name}</div>
-                <div className="font-semibold mt-1">{a.account_name}</div>
+              <div className="min-w-0">
+                <div className="text-xs uppercase tracking-wide text-primary font-medium truncate">{a.bank_name}</div>
+                <div className="font-semibold mt-1 truncate">{a.account_name}</div>
                 <div className="text-xs text-muted-foreground capitalize">{a.account_type}</div>
               </div>
-              <button onClick={() => del(a.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => del(a.id)} className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
             </div>
             <div className="mt-4 text-2xl font-bold">{formatKz(a.current_balance)}</div>
             <div className="text-xs text-muted-foreground">{a.currency}</div>
@@ -72,11 +74,12 @@ function AccountModal({ open, onClose }: { open: boolean; onClose: () => void })
   const [loading, setLoading] = useState(false);
 
   const save = async () => {
-    if (!user || !form.bank_name || !form.account_name) { toast.error("Preencha os campos obrigatórios"); return; }
+    const bankName = form.bank_name.trim();
+    if (!user || !bankName || !form.account_name) { toast.error("Preencha os campos obrigatórios"); return; }
     setLoading(true);
     const { error } = await supabase.from("bank_accounts").insert({
       user_id: user.id,
-      bank_name: form.bank_name,
+      bank_name: bankName,
       account_name: form.account_name,
       account_type: form.account_type,
       currency: form.currency,
@@ -84,14 +87,20 @@ function AccountModal({ open, onClose }: { open: boolean; onClose: () => void })
     } as never);
     setLoading(false);
     if (error) toast.error(error.message);
-    else { toast.success("Conta adicionada"); onClose(); }
+    else { toast.success("Conta adicionada"); setForm({ bank_name: "", account_name: "", account_type: "corrente", currency: "AOA", current_balance: "" }); onClose(); }
   };
 
   return (
     <Modal open={open} onClose={onClose} title="Nova Conta">
       <div className="space-y-3">
-        <Field label="Banco"><TextInput value={form.bank_name} onChange={e => setForm({ ...form, bank_name: e.target.value })} placeholder="BAI, BFA, BIC..." /></Field>
-        <Field label="Nome da conta"><TextInput value={form.account_name} onChange={e => setForm({ ...form, account_name: e.target.value })} /></Field>
+        <SelectWithCustom
+          label="Banco"
+          value={form.bank_name}
+          onChange={v => setForm({ ...form, bank_name: v })}
+          options={BANCOS_ANGOLA.map(b => ({ value: b, label: b }))}
+          customLabel="Outro banco..."
+        />
+        <Field label="Nome da conta"><TextInput value={form.account_name} onChange={e => setForm({ ...form, account_name: e.target.value })} placeholder="Ex.: Conta Ordenado" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Tipo"><SelectInput value={form.account_type} onChange={e => setForm({ ...form, account_type: e.target.value })}>
             <option value="corrente">Corrente</option>

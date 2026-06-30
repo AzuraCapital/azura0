@@ -65,10 +65,24 @@ function Dashboard() {
     },
   });
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile-name", uid],
+    enabled: !!uid,
+    queryFn: async () => (await supabase.from("profiles").select("first_name,last_name").eq("id", uid!).maybeSingle()).data,
+  });
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 19 ? "Boa tarde" : "Boa noite";
+  const emoji = hour < 12 ? "☀️" : hour < 19 ? "👋" : "🌙";
+  const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim();
+  const today = new Intl.DateTimeFormat("pt-PT", { weekday: "long", day: "2-digit", month: "long" }).format(new Date());
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-sm sm:text-base font-medium text-primary">{greeting}{name ? `, ${name}` : ""} {emoji}</p>
+        <p className="text-xs text-muted-foreground capitalize mt-0.5">{today}</p>
+        <h1 className="text-3xl font-bold mt-2">Dashboard</h1>
         <p className="text-muted-foreground">Visão geral do seu património</p>
       </div>
 

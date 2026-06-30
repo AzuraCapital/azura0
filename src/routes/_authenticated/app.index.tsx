@@ -79,12 +79,14 @@ function Dashboard() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div>
-        <p className="text-sm sm:text-base font-medium text-primary">{greeting}{name ? `, ${name}` : ""} {emoji}</p>
-        <p className="text-xs text-muted-foreground capitalize mt-0.5">{today}</p>
-        <h1 className="text-3xl font-bold mt-2">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral do seu património</p>
-      </div>
+     <div>
+  <p className="text-base sm:text-lg font-bold text-primary">
+    {greeting}{name ? ", " : ""}{name ? <span className="text-foreground">{name}</span> : ""} {emoji}
+  </p>
+  <p className="text-sm text-muted-foreground capitalize mt-0.5">{today}</p>
+  <h1 className="text-3xl font-bold mt-2">Dashboard</h1>
+  <p className="text-sm text-muted-foreground">Visão geral do seu património</p>
+</div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard icon={Wallet} label="Património Líquido" value={formatKz(data?.net ?? 0)} positive />

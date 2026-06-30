@@ -6,7 +6,7 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background/70 backdrop-blur-sm" onClick={onClose}>
       <div className="min-h-full flex items-start sm:items-center justify-center p-4">
-        <div className="glass rounded-3xl w-full max-w-lg animate-fade-up flex flex-col max-h-[calc(100dvh-2rem)] my-auto" onClick={e => e.stopPropagation()}>
+        <div className="bg-card border border-border rounded-3xl w-full max-w-lg animate-fade-up flex flex-col max-h-[calc(100dvh-2rem)] my-auto shadow-xl" onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between p-5 pb-4 border-b border-border/40 shrink-0">
             <h2 className="text-lg sm:text-xl font-bold">{title}</h2>
             <button onClick={onClose} className="rounded-full p-2 hover:bg-secondary"><X className="h-4 w-4" /></button>

@@ -18,6 +18,7 @@ import { Route as AuthenticatedAppPatrimonioRouteImport } from './routes/_authen
 import { Route as AuthenticatedAppObjetivosRouteImport } from './routes/_authenticated/app.objetivos'
 import { Route as AuthenticatedAppInvestimentosRouteImport } from './routes/_authenticated/app.investimentos'
 import { Route as AuthenticatedAppFinancasRouteImport } from './routes/_authenticated/app.financas'
+import { Route as AuthenticatedAppDefinicoesRouteImport } from './routes/_authenticated/app.definicoes'
 import { Route as AuthenticatedAppCalendarioRouteImport } from './routes/_authenticated/app.calendario'
 import { Route as AuthenticatedAppBancosRouteImport } from './routes/_authenticated/app.bancos'
 
@@ -69,6 +70,12 @@ const AuthenticatedAppFinancasRoute =
     path: '/app/financas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppDefinicoesRoute =
+  AuthenticatedAppDefinicoesRouteImport.update({
+    id: '/app/definicoes',
+    path: '/app/definicoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppCalendarioRoute =
   AuthenticatedAppCalendarioRouteImport.update({
     id: '/app/calendario',
@@ -87,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/app/bancos': typeof AuthenticatedAppBancosRoute
   '/app/calendario': typeof AuthenticatedAppCalendarioRoute
+  '/app/definicoes': typeof AuthenticatedAppDefinicoesRoute
   '/app/financas': typeof AuthenticatedAppFinancasRoute
   '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
   '/app/objetivos': typeof AuthenticatedAppObjetivosRoute
@@ -99,6 +107,7 @@ export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/app/bancos': typeof AuthenticatedAppBancosRoute
   '/app/calendario': typeof AuthenticatedAppCalendarioRoute
+  '/app/definicoes': typeof AuthenticatedAppDefinicoesRoute
   '/app/financas': typeof AuthenticatedAppFinancasRoute
   '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
   '/app/objetivos': typeof AuthenticatedAppObjetivosRoute
@@ -113,6 +122,7 @@ export interface FileRoutesById {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/_authenticated/app/bancos': typeof AuthenticatedAppBancosRoute
   '/_authenticated/app/calendario': typeof AuthenticatedAppCalendarioRoute
+  '/_authenticated/app/definicoes': typeof AuthenticatedAppDefinicoesRoute
   '/_authenticated/app/financas': typeof AuthenticatedAppFinancasRoute
   '/_authenticated/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
   '/_authenticated/app/objetivos': typeof AuthenticatedAppObjetivosRoute
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/app/bancos'
     | '/app/calendario'
+    | '/app/definicoes'
     | '/app/financas'
     | '/app/investimentos'
     | '/app/objetivos'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/app/bancos'
     | '/app/calendario'
+    | '/app/definicoes'
     | '/app/financas'
     | '/app/investimentos'
     | '/app/objetivos'
@@ -152,6 +164,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/_authenticated/app/bancos'
     | '/_authenticated/app/calendario'
+    | '/_authenticated/app/definicoes'
     | '/_authenticated/app/financas'
     | '/_authenticated/app/investimentos'
     | '/_authenticated/app/objetivos'
@@ -230,6 +243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppFinancasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/definicoes': {
+      id: '/_authenticated/app/definicoes'
+      path: '/app/definicoes'
+      fullPath: '/app/definicoes'
+      preLoaderRoute: typeof AuthenticatedAppDefinicoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/calendario': {
       id: '/_authenticated/app/calendario'
       path: '/app/calendario'
@@ -250,6 +270,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppBancosRoute: typeof AuthenticatedAppBancosRoute
   AuthenticatedAppCalendarioRoute: typeof AuthenticatedAppCalendarioRoute
+  AuthenticatedAppDefinicoesRoute: typeof AuthenticatedAppDefinicoesRoute
   AuthenticatedAppFinancasRoute: typeof AuthenticatedAppFinancasRoute
   AuthenticatedAppInvestimentosRoute: typeof AuthenticatedAppInvestimentosRoute
   AuthenticatedAppObjetivosRoute: typeof AuthenticatedAppObjetivosRoute
@@ -260,6 +281,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppBancosRoute: AuthenticatedAppBancosRoute,
   AuthenticatedAppCalendarioRoute: AuthenticatedAppCalendarioRoute,
+  AuthenticatedAppDefinicoesRoute: AuthenticatedAppDefinicoesRoute,
   AuthenticatedAppFinancasRoute: AuthenticatedAppFinancasRoute,
   AuthenticatedAppInvestimentosRoute: AuthenticatedAppInvestimentosRoute,
   AuthenticatedAppObjetivosRoute: AuthenticatedAppObjetivosRoute,

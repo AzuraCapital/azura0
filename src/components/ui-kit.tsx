@@ -1,10 +1,11 @@
 import { type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-background/70 backdrop-blur-sm" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div className="min-h-full flex items-start sm:items-center justify-center p-4">
         <div className="bg-card border border-border rounded-3xl w-full max-w-lg animate-fade-up flex flex-col max-h-[calc(100dvh-2rem)] my-auto shadow-xl" onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between p-5 pb-4 border-b border-border/40 shrink-0">
@@ -14,7 +15,8 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
           <div className="p-5 overflow-y-auto">{children}</div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -59,7 +61,6 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   );
 }
 
-/** Select com opção "Outro..." que revela input livre. */
 export function SelectWithCustom({
   label, value, onChange, options, placeholder = "Selecionar...", customLabel = "Outro...",
 }: {

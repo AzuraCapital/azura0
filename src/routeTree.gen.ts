@@ -9,38 +9,191 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
+import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppPatrimonioRouteImport } from './routes/_authenticated/app.patrimonio'
+import { Route as AuthenticatedAppObjetivosRouteImport } from './routes/_authenticated/app.objetivos'
+import { Route as AuthenticatedAppInvestimentosRouteImport } from './routes/_authenticated/app.investimentos'
+import { Route as AuthenticatedAppFinancasRouteImport } from './routes/_authenticated/app.financas'
+import { Route as AuthenticatedAppDefinicoesRouteImport } from './routes/_authenticated/app.definicoes'
+import { Route as AuthenticatedAppCalendarioRouteImport } from './routes/_authenticated/app.calendario'
+import { Route as AuthenticatedAppBancosRouteImport } from './routes/_authenticated/app.bancos'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
+  id: '/app/',
+  path: '/app/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppPatrimonioRoute =
+  AuthenticatedAppPatrimonioRouteImport.update({
+    id: '/app/patrimonio',
+    path: '/app/patrimonio',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppObjetivosRoute =
+  AuthenticatedAppObjetivosRouteImport.update({
+    id: '/app/objetivos',
+    path: '/app/objetivos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppInvestimentosRoute =
+  AuthenticatedAppInvestimentosRouteImport.update({
+    id: '/app/investimentos',
+    path: '/app/investimentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppFinancasRoute =
+  AuthenticatedAppFinancasRouteImport.update({
+    id: '/app/financas',
+    path: '/app/financas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppDefinicoesRoute =
+  AuthenticatedAppDefinicoesRouteImport.update({
+    id: '/app/definicoes',
+    path: '/app/definicoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppCalendarioRoute =
+  AuthenticatedAppCalendarioRouteImport.update({
+    id: '/app/calendario',
+    path: '/app/calendario',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppBancosRoute = AuthenticatedAppBancosRouteImport.update({
+  id: '/app/bancos',
+  path: '/app/bancos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/app/bancos': typeof AuthenticatedAppBancosRoute
+  '/app/calendario': typeof AuthenticatedAppCalendarioRoute
+  '/app/definicoes': typeof AuthenticatedAppDefinicoesRoute
+  '/app/financas': typeof AuthenticatedAppFinancasRoute
+  '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
+  '/app/objetivos': typeof AuthenticatedAppObjetivosRoute
+  '/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
+  '/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/app/bancos': typeof AuthenticatedAppBancosRoute
+  '/app/calendario': typeof AuthenticatedAppCalendarioRoute
+  '/app/definicoes': typeof AuthenticatedAppDefinicoesRoute
+  '/app/financas': typeof AuthenticatedAppFinancasRoute
+  '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
+  '/app/objetivos': typeof AuthenticatedAppObjetivosRoute
+  '/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
+  '/app': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRouteWithChildren
+  '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/_authenticated/app/bancos': typeof AuthenticatedAppBancosRoute
+  '/_authenticated/app/calendario': typeof AuthenticatedAppCalendarioRoute
+  '/_authenticated/app/definicoes': typeof AuthenticatedAppDefinicoesRoute
+  '/_authenticated/app/financas': typeof AuthenticatedAppFinancasRoute
+  '/_authenticated/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
+  '/_authenticated/app/objetivos': typeof AuthenticatedAppObjetivosRoute
+  '/_authenticated/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
+  '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/auth/reset-password'
+    | '/app/bancos'
+    | '/app/calendario'
+    | '/app/definicoes'
+    | '/app/financas'
+    | '/app/investimentos'
+    | '/app/objetivos'
+    | '/app/patrimonio'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/auth/reset-password'
+    | '/app/bancos'
+    | '/app/calendario'
+    | '/app/definicoes'
+    | '/app/financas'
+    | '/app/investimentos'
+    | '/app/objetivos'
+    | '/app/patrimonio'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/auth/reset-password'
+    | '/_authenticated/app/bancos'
+    | '/_authenticated/app/calendario'
+    | '/_authenticated/app/definicoes'
+    | '/_authenticated/app/financas'
+    | '/_authenticated/app/investimentos'
+    | '/_authenticated/app/objetivos'
+    | '/_authenticated/app/patrimonio'
+    | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +201,111 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_authenticated/app/': {
+      id: '/_authenticated/app/'
+      path: '/app'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/patrimonio': {
+      id: '/_authenticated/app/patrimonio'
+      path: '/app/patrimonio'
+      fullPath: '/app/patrimonio'
+      preLoaderRoute: typeof AuthenticatedAppPatrimonioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/objetivos': {
+      id: '/_authenticated/app/objetivos'
+      path: '/app/objetivos'
+      fullPath: '/app/objetivos'
+      preLoaderRoute: typeof AuthenticatedAppObjetivosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/investimentos': {
+      id: '/_authenticated/app/investimentos'
+      path: '/app/investimentos'
+      fullPath: '/app/investimentos'
+      preLoaderRoute: typeof AuthenticatedAppInvestimentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/financas': {
+      id: '/_authenticated/app/financas'
+      path: '/app/financas'
+      fullPath: '/app/financas'
+      preLoaderRoute: typeof AuthenticatedAppFinancasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/definicoes': {
+      id: '/_authenticated/app/definicoes'
+      path: '/app/definicoes'
+      fullPath: '/app/definicoes'
+      preLoaderRoute: typeof AuthenticatedAppDefinicoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/calendario': {
+      id: '/_authenticated/app/calendario'
+      path: '/app/calendario'
+      fullPath: '/app/calendario'
+      preLoaderRoute: typeof AuthenticatedAppCalendarioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/bancos': {
+      id: '/_authenticated/app/bancos'
+      path: '/app/bancos'
+      fullPath: '/app/bancos'
+      preLoaderRoute: typeof AuthenticatedAppBancosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppBancosRoute: typeof AuthenticatedAppBancosRoute
+  AuthenticatedAppCalendarioRoute: typeof AuthenticatedAppCalendarioRoute
+  AuthenticatedAppDefinicoesRoute: typeof AuthenticatedAppDefinicoesRoute
+  AuthenticatedAppFinancasRoute: typeof AuthenticatedAppFinancasRoute
+  AuthenticatedAppInvestimentosRoute: typeof AuthenticatedAppInvestimentosRoute
+  AuthenticatedAppObjetivosRoute: typeof AuthenticatedAppObjetivosRoute
+  AuthenticatedAppPatrimonioRoute: typeof AuthenticatedAppPatrimonioRoute
+  AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppBancosRoute: AuthenticatedAppBancosRoute,
+  AuthenticatedAppCalendarioRoute: AuthenticatedAppCalendarioRoute,
+  AuthenticatedAppDefinicoesRoute: AuthenticatedAppDefinicoesRoute,
+  AuthenticatedAppFinancasRoute: AuthenticatedAppFinancasRoute,
+  AuthenticatedAppInvestimentosRoute: AuthenticatedAppInvestimentosRoute,
+  AuthenticatedAppObjetivosRoute: AuthenticatedAppObjetivosRoute,
+  AuthenticatedAppPatrimonioRoute: AuthenticatedAppPatrimonioRoute,
+  AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface AuthRouteChildren {
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

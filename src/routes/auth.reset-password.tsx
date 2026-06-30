@@ -41,8 +41,8 @@ function ResetPassword() {
       <div className="flex-1 flex items-center justify-center px-6 pb-12">
         <form onSubmit={onSubmit} className="glass rounded-3xl p-8 w-full max-w-md animate-fade-up space-y-4">
           <h1 className="text-2xl font-bold">Definir nova password</h1>
-          <Field icon={Lock} type="password" placeholder="Nova password" value={pwd} onChange={e => setPwd(e.target.value)} />
-          <Field icon={Lock} type="password" placeholder="Confirmar password" value={confirm} onChange={e => setConfirm(e.target.value)} />
+          <Field icon={Lock} type="password" placeholder="Nova password" value={pwd} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPwd(e.target.value)} />
+          <Field icon={Lock} type="password" placeholder="Confirmar password" value={confirm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirm(e.target.value)} />
           <button disabled={loading} className="w-full rounded-full gradient-primary px-6 py-3 font-semibold text-white">
             {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Atualizar password"}
           </button>

@@ -16,6 +16,7 @@ import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-passw
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppPatrimonioRouteImport } from './routes/_authenticated/app.patrimonio'
 import { Route as AuthenticatedAppInvestimentosRouteImport } from './routes/_authenticated/app.investimentos'
+import { Route as AuthenticatedAppBancosRouteImport } from './routes/_authenticated/app.bancos'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -53,11 +54,17 @@ const AuthenticatedAppInvestimentosRoute =
     path: '/app/investimentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppBancosRoute = AuthenticatedAppBancosRouteImport.update({
+  id: '/app/bancos',
+  path: '/app/bancos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/app/bancos': typeof AuthenticatedAppBancosRoute
   '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
   '/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/app/bancos': typeof AuthenticatedAppBancosRoute
   '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
   '/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/_authenticated/app/bancos': typeof AuthenticatedAppBancosRoute
   '/_authenticated/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
   '/_authenticated/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/auth/reset-password'
+    | '/app/bancos'
     | '/app/investimentos'
     | '/app/patrimonio'
     | '/app/'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/auth/reset-password'
+    | '/app/bancos'
     | '/app/investimentos'
     | '/app/patrimonio'
     | '/app'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/auth/reset-password'
+    | '/_authenticated/app/bancos'
     | '/_authenticated/app/investimentos'
     | '/_authenticated/app/patrimonio'
     | '/_authenticated/app/'
@@ -165,16 +177,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppInvestimentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/bancos': {
+      id: '/_authenticated/app/bancos'
+      path: '/app/bancos'
+      fullPath: '/app/bancos'
+      preLoaderRoute: typeof AuthenticatedAppBancosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppBancosRoute: typeof AuthenticatedAppBancosRoute
   AuthenticatedAppInvestimentosRoute: typeof AuthenticatedAppInvestimentosRoute
   AuthenticatedAppPatrimonioRoute: typeof AuthenticatedAppPatrimonioRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppBancosRoute: AuthenticatedAppBancosRoute,
   AuthenticatedAppInvestimentosRoute: AuthenticatedAppInvestimentosRoute,
   AuthenticatedAppPatrimonioRoute: AuthenticatedAppPatrimonioRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,

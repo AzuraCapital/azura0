@@ -17,6 +17,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppPatrimonioRouteImport } from './routes/_authenticated/app.patrimonio'
 import { Route as AuthenticatedAppObjetivosRouteImport } from './routes/_authenticated/app.objetivos'
 import { Route as AuthenticatedAppInvestimentosRouteImport } from './routes/_authenticated/app.investimentos'
+import { Route as AuthenticatedAppFinancasRouteImport } from './routes/_authenticated/app.financas'
 import { Route as AuthenticatedAppBancosRouteImport } from './routes/_authenticated/app.bancos'
 
 const AuthRoute = AuthRouteImport.update({
@@ -61,6 +62,12 @@ const AuthenticatedAppInvestimentosRoute =
     path: '/app/investimentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppFinancasRoute =
+  AuthenticatedAppFinancasRouteImport.update({
+    id: '/app/financas',
+    path: '/app/financas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppBancosRoute = AuthenticatedAppBancosRouteImport.update({
   id: '/app/bancos',
   path: '/app/bancos',
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/app/bancos': typeof AuthenticatedAppBancosRoute
+  '/app/financas': typeof AuthenticatedAppFinancasRoute
   '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
   '/app/objetivos': typeof AuthenticatedAppObjetivosRoute
   '/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/app/bancos': typeof AuthenticatedAppBancosRoute
+  '/app/financas': typeof AuthenticatedAppFinancasRoute
   '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
   '/app/objetivos': typeof AuthenticatedAppObjetivosRoute
   '/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
@@ -94,6 +103,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/_authenticated/app/bancos': typeof AuthenticatedAppBancosRoute
+  '/_authenticated/app/financas': typeof AuthenticatedAppFinancasRoute
   '/_authenticated/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
   '/_authenticated/app/objetivos': typeof AuthenticatedAppObjetivosRoute
   '/_authenticated/app/patrimonio': typeof AuthenticatedAppPatrimonioRoute
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auth/reset-password'
     | '/app/bancos'
+    | '/app/financas'
     | '/app/investimentos'
     | '/app/objetivos'
     | '/app/patrimonio'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auth/reset-password'
     | '/app/bancos'
+    | '/app/financas'
     | '/app/investimentos'
     | '/app/objetivos'
     | '/app/patrimonio'
@@ -127,6 +139,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auth/reset-password'
     | '/_authenticated/app/bancos'
+    | '/_authenticated/app/financas'
     | '/_authenticated/app/investimentos'
     | '/_authenticated/app/objetivos'
     | '/_authenticated/app/patrimonio'
@@ -197,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppInvestimentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/financas': {
+      id: '/_authenticated/app/financas'
+      path: '/app/financas'
+      fullPath: '/app/financas'
+      preLoaderRoute: typeof AuthenticatedAppFinancasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/bancos': {
       id: '/_authenticated/app/bancos'
       path: '/app/bancos'
@@ -209,6 +229,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppBancosRoute: typeof AuthenticatedAppBancosRoute
+  AuthenticatedAppFinancasRoute: typeof AuthenticatedAppFinancasRoute
   AuthenticatedAppInvestimentosRoute: typeof AuthenticatedAppInvestimentosRoute
   AuthenticatedAppObjetivosRoute: typeof AuthenticatedAppObjetivosRoute
   AuthenticatedAppPatrimonioRoute: typeof AuthenticatedAppPatrimonioRoute
@@ -217,6 +238,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppBancosRoute: AuthenticatedAppBancosRoute,
+  AuthenticatedAppFinancasRoute: AuthenticatedAppFinancasRoute,
   AuthenticatedAppInvestimentosRoute: AuthenticatedAppInvestimentosRoute,
   AuthenticatedAppObjetivosRoute: AuthenticatedAppObjetivosRoute,
   AuthenticatedAppPatrimonioRoute: AuthenticatedAppPatrimonioRoute,

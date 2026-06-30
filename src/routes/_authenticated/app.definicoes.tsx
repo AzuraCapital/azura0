@@ -17,7 +17,8 @@ function Page() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [saving, setSaving] = useState(false);
 
   const { data: profile } = useQuery({
@@ -26,12 +27,17 @@ function Page() {
     queryFn: async () => (await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle()).data,
   });
 
-  useEffect(() => { if (profile) setFullName((profile as any).full_name ?? ""); }, [profile]);
+  useEffect(() => {
+    if (profile) {
+      setFirstName((profile as any).first_name ?? "");
+      setLastName((profile as any).last_name ?? "");
+    }
+  }, [profile]);
 
   const save = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ full_name: fullName } as never).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ first_name: firstName, last_name: lastName } as never).eq("id", user.id);
     setSaving(false);
     if (error) toast.error(error.message); else toast.success("Perfil atualizado");
   };
@@ -44,7 +50,10 @@ function Page() {
 
       <div className="glass rounded-3xl p-6 space-y-4">
         <h2 className="font-semibold">Perfil</h2>
-        <Field label="Nome completo"><TextInput value={fullName} onChange={e => setFullName(e.target.value)} /></Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Primeiro nome"><TextInput value={firstName} onChange={e => setFirstName(e.target.value)} /></Field>
+          <Field label="Último nome"><TextInput value={lastName} onChange={e => setLastName(e.target.value)} /></Field>
+        </div>
         <Field label="Email"><TextInput value={user?.email ?? ""} disabled /></Field>
         {user?.phone && <Field label="Telefone"><TextInput value={user.phone} disabled /></Field>}
         <PrimaryButton onClick={save} disabled={saving}>Guardar</PrimaryButton>

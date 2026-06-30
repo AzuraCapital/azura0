@@ -1,7 +1,17 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
-  LayoutDashboard, TrendingUp, Landmark, Target, Receipt, Calendar, Settings, LogOut, History,
+  LayoutDashboard,
+  TrendingUp,
+  Landmark,
+  Target,
+  Receipt,
+  Calendar,
+  Settings,
+  LogOut,
+  History,
+  Menu,
+  X,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -19,9 +29,11 @@ const nav = [
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const path = useRouterState({ select: s => s.location.pathname });
+  const path = useRouterState({ select: (s) => s.location.pathname });
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (to: string, exact?: boolean) =>
     exact ? path === to : path === to || path.startsWith(to + "/");
@@ -33,16 +45,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-dvh">
-      {/* Background fixo */}
+      {/* Background */}
       <div className="fixed inset-0 -z-10 gradient-hero" aria-hidden />
 
-      {/* Sidebar — apenas desktop */}
+      {/* Sidebar Desktop */}
       <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border flex-col">
         <div className="p-5 border-b border-sidebar-border">
           <Logo className="h-8" />
         </div>
+
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {nav.map(item => (
+          {nav.map((item) => (
             <Link
               key={item.to}
               to={item.to}
@@ -57,46 +70,98 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
+
         <div className="p-4 border-t border-sidebar-border space-y-2">
-          <div className="px-3 py-2 text-xs text-muted-foreground truncate">{user?.email || user?.phone}</div>
+          <div className="px-3 py-2 text-xs text-muted-foreground truncate">
+            {user?.email || user?.phone}
+          </div>
+
           <button
             onClick={handleSignOut}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition"
           >
-            <LogOut className="h-4 w-4" /> Sair
+            <LogOut className="h-4 w-4" />
+            Sair
           </button>
         </div>
       </aside>
 
+      {/* Sidebar Mobile */}
+      {mobileOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
+
+          <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border flex flex-col lg:hidden">
+
+            <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
+              <Logo className="h-8" />
+
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="p-2 rounded-lg hover:bg-sidebar-accent"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+              {nav.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-medium transition ${
+                    isActive(item.to, (item as any).exact)
+                      ? "gradient-primary text-white shadow-md shadow-primary/25"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="p-4 border-t border-sidebar-border space-y-2">
+              <div className="px-3 py-2 text-xs text-muted-foreground truncate">
+                {user?.email || user?.phone}
+              </div>
+
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent transition"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+            </div>
+
+          </aside>
+        </>
+      )}
+
       {/* Main */}
-      <div className="lg:pl-64 pb-20 lg:pb-0">
-        <header className="sticky top-0 z-20 flex items-center justify-end px-4 md:px-8 py-4 border-b border-border/50 bg-background/60 backdrop-blur-xl">
+      <div className="lg:pl-64">
+        <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-4 border-b border-border/50 bg-background/60 backdrop-blur-xl">
+
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="lg:hidden p-2 rounded-lg hover:bg-accent"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+
           <ThemeToggle />
+
         </header>
+
         <main className="px-4 md:px-8 py-6">
           <div className="animate-fade-up">{children}</div>
         </main>
       </div>
-
-      {/* Bottom nav — apenas mobile */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-sidebar-border">
-        <div className="flex items-center justify-around px-2 py-2">
-          {nav.slice(0, 5).map(item => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl text-xs font-medium transition ${
-                isActive(item.to, (item as any).exact)
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
     </div>
   );
 }

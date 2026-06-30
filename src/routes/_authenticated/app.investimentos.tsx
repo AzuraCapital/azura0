@@ -96,7 +96,7 @@ function AssetModal({ open, onClose }: { open: boolean; onClose: () => void }) {
       invested_amount: qty * px,
       acquisition_date: form.acquisition_date || null,
       notes: form.notes || null,
-    });
+    } as never);
     setLoading(false);
     if (error) toast.error(error.message);
     else { toast.success("Ativo adicionado"); onClose(); }

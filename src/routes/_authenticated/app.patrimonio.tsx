@@ -101,7 +101,7 @@ function LiabilityModal({ open, onClose }: { open: boolean; onClose: () => void 
       amount: Number(form.amount),
       due_date: form.due_date || null,
       description: form.description || null,
-    });
+    } as never);
     setLoading(false);
     if (error) toast.error(error.message);
     else { toast.success("Adicionado"); setForm({ type: "divida_a_pagar", counterparty: "", amount: "", due_date: "", description: "" }); onClose(); }

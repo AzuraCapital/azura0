@@ -27,7 +27,7 @@ function Page() {
     enabled: !!user,
     queryFn: async () => (await supabase
       .from("transactions")
-      .select("*, income_categories(name), expense_categories(name), bank_accounts(account_name)")
+      .select("*, income_categories(name), expense_categories(name), bank_accounts(bank_name)")
       .gte("transaction_date", ms).lte("transaction_date", me)
       .order("transaction_date", { ascending: false })
     ).data ?? [],

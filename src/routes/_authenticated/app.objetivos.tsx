@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatKz, formatDate } from "@/lib/format";
-import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, TextArea } from "@/components/ui-kit";
+import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, SelectWithCustom } from "@/components/ui-kit";
 import { Plus, Trash2, Target, Star } from "lucide-react";
 import { toast } from "sonner";
 
@@ -12,6 +12,21 @@ export const Route = createFileRoute("/_authenticated/app/objetivos")({
   head: () => ({ meta: [{ title: "Objetivos — Azura Capital" }] }),
   component: Page,
 });
+
+const GOAL_PRESETS = [
+  { value: "Comprar casa", label: "Comprar casa" },
+  { value: "Comprar carro", label: "Comprar carro" },
+  { value: "Pagar dívida", label: "Pagar dívida" },
+  { value: "Reserva de emergência", label: "Reserva de emergência" },
+  { value: "Viagem", label: "Viagem" },
+];
+
+const parseNum = (s: string) => {
+  const n = Number(String(s ?? "").replace(/\s/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+};
+
+const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 function Page() {
   const { user } = useAuth();
@@ -46,14 +61,14 @@ function Page() {
           return (
             <div key={g.id} className="glass rounded-3xl p-6">
               <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-full p-2 bg-primary/10 text-primary"><Target className="h-4 w-4" /></div>
-                  <div>
-                    <div className="font-semibold flex items-center gap-2">{g.name} {g.is_primary && <Star className="h-4 w-4 fill-primary text-primary" />}</div>
-                    {g.description && <div className="text-sm text-muted-foreground">{g.description}</div>}
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="rounded-full p-2 bg-primary/10 text-primary shrink-0"><Target className="h-4 w-4" /></div>
+                  <div className="min-w-0">
+                    <div className="font-semibold flex items-center gap-2 truncate">{g.name} {g.is_primary && <Star className="h-4 w-4 fill-primary text-primary shrink-0" />}</div>
+                    {g.notes && <div className="text-sm text-muted-foreground truncate">{g.notes}</div>}
                   </div>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0">
                   <button onClick={() => togglePrimary(g.id)} className="text-muted-foreground hover:text-primary p-1" title="Marcar como principal"><Star className="h-4 w-4" /></button>
                   <button onClick={() => del(g.id)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="h-4 w-4" /></button>
                 </div>
@@ -83,35 +98,62 @@ function Page() {
 
 function GoalModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
-  const [form, setForm] = useState({ name: "", description: "", target_amount: "", current_amount: "", target_date: "" });
+  const now = new Date();
+  const [form, setForm] = useState({
+    name: "",
+    notes: "",
+    target_amount: "",
+    current_amount: "",
+    target_month: String(now.getMonth() + 1),
+    target_year: String(now.getFullYear() + 1),
+  });
   const [loading, setLoading] = useState(false);
 
   const save = async () => {
-    if (!user || !form.name || !form.target_amount) { toast.error("Preencha os campos obrigatórios"); return; }
+    if (!user || !form.name.trim() || !form.target_amount) { toast.error("Preencha os campos obrigatórios"); return; }
     setLoading(true);
+    const y = Number(form.target_year);
+    const m = Number(form.target_month);
+    const target_date = `${y}-${String(m).padStart(2, "0")}-01`;
     const { error } = await supabase.from("goals").insert({
       user_id: user.id,
-      name: form.name,
-      description: form.description || null,
-      target_amount: Number(form.target_amount),
-      current_amount: Number(form.current_amount) || 0,
-      target_date: form.target_date || null,
+      name: form.name.trim(),
+      notes: form.notes || null,
+      target_amount: parseNum(form.target_amount),
+      current_amount: parseNum(form.current_amount),
+      target_date,
     } as never);
     setLoading(false);
     if (error) toast.error(error.message);
     else { toast.success("Objetivo criado"); onClose(); }
   };
 
+  const years = Array.from({ length: 30 }, (_, i) => now.getFullYear() + i);
+
   return (
     <Modal open={open} onClose={onClose} title="Novo Objetivo">
       <div className="space-y-3">
-        <Field label="Nome"><TextInput value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ex.: Casa, Reserva..." /></Field>
-        <Field label="Descrição"><TextArea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></Field>
+        <SelectWithCustom
+          label="Nome"
+          value={form.name}
+          onChange={v => setForm({ ...form, name: v.trim() === "" ? "" : v })}
+          options={GOAL_PRESETS}
+          customLabel="Personalizado..."
+          placeholder="Selecionar categoria..."
+        />
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Meta (Kz)"><TextInput type="number" value={form.target_amount} onChange={e => setForm({ ...form, target_amount: e.target.value })} /></Field>
-          <Field label="Atual (Kz)"><TextInput type="number" value={form.current_amount} onChange={e => setForm({ ...form, current_amount: e.target.value })} /></Field>
+          <Field label="Meta (Kz)"><TextInput inputMode="decimal" value={form.target_amount} onChange={e => setForm({ ...form, target_amount: e.target.value })} /></Field>
+          <Field label="Atual (Kz)"><TextInput inputMode="decimal" value={form.current_amount} onChange={e => setForm({ ...form, current_amount: e.target.value })} /></Field>
         </div>
-        <Field label="Data alvo"><TextInput type="date" value={form.target_date} onChange={e => setForm({ ...form, target_date: e.target.value })} /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Mês alvo"><SelectInput value={form.target_month} onChange={e => setForm({ ...form, target_month: e.target.value })}>
+            {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+          </SelectInput></Field>
+          <Field label="Ano alvo"><SelectInput value={form.target_year} onChange={e => setForm({ ...form, target_year: e.target.value })}>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </SelectInput></Field>
+        </div>
+        <Field label="Notas (opcional)"><TextInput value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></Field>
         <div className="flex gap-2 justify-end pt-2">
           <GhostButton onClick={onClose}>Cancelar</GhostButton>
           <PrimaryButton onClick={save} disabled={loading}>Guardar</PrimaryButton>

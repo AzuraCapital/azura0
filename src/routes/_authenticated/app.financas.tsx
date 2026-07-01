@@ -14,6 +14,11 @@ export const Route = createFileRoute("/_authenticated/app/financas")({
   component: Page,
 });
 
+const parseNum = (s: string) => {
+  const n = Number(String(s ?? "").replace(/\s/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+};
+
 function Page() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -23,7 +28,7 @@ function Page() {
   const { data: txns } = useQuery({
     queryKey: ["transactions", user?.id],
     enabled: !!user,
-    queryFn: async () => (await supabase.from("transactions").select("*, income_categories(name, color), expense_categories(name, color), bank_accounts(account_name)").order("transaction_date", { ascending: false }).limit(200)).data ?? [],
+    queryFn: async () => (await supabase.from("transactions").select("*, income_categories(name), expense_categories(name), bank_accounts(bank_name)").order("transaction_date", { ascending: false }).limit(200)).data ?? [],
   });
 
   const filtered = (txns ?? []).filter((t: any) => tab === "todos" || t.type === tab);
@@ -69,7 +74,7 @@ function Page() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{t.description || cat?.name || "Sem descrição"}</div>
-                    <div className="text-xs text-muted-foreground truncate">{cat?.name} · {formatDate(t.transaction_date)} {t.bank_accounts && `· ${t.bank_accounts.account_name}`}</div>
+                    <div className="text-xs text-muted-foreground truncate">{cat?.name} · {formatDate(t.transaction_date)} {t.bank_accounts && `· ${t.bank_accounts.bank_name}`}</div>
                   </div>
                   <div className={`font-semibold text-right shrink-0 ${t.type === "receita" ? "text-success" : "text-destructive"}`}>
                     {t.type === "receita" ? "+" : "-"}{formatKz(t.amount)}
@@ -82,7 +87,10 @@ function Page() {
         )}
       </div>
 
-      <TxModal open={open} onClose={() => { setOpen(false); qc.invalidateQueries({ queryKey: ["transactions"] }); }} />
+      <TxModal open={open} onClose={() => setOpen(false)} onSaved={() => {
+        qc.invalidateQueries({ queryKey: ["transactions"] });
+        qc.invalidateQueries({ queryKey: ["dashboard"] });
+      }} />
     </div>
   );
 }
@@ -100,7 +108,7 @@ function StatCard({ label, value, icon: Icon, color }: any) {
   );
 }
 
-function TxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function TxModal({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [form, setForm] = useState({ type: "despesa" as "despesa" | "receita", amount: "", description: "", transaction_date: format(new Date(), "yyyy-MM-dd"), category_id: "", bank_account_id: "" });
@@ -111,12 +119,12 @@ function TxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data: cats } = useQuery({
     queryKey: ["cats", form.type, user?.id],
     enabled: !!user && open,
-    queryFn: async () => (await supabase.from(table).select("*").order("name")).data ?? [],
+    queryFn: async () => (await supabase.from(table).select("id, name").order("name")).data ?? [],
   });
   const { data: accounts } = useQuery({
     queryKey: ["accs", user?.id],
     enabled: !!user && open,
-    queryFn: async () => (await supabase.from("bank_accounts").select("id, account_name, bank_name").order("account_name")).data ?? [],
+    queryFn: async () => (await supabase.from("bank_accounts").select("id, bank_name").order("bank_name")).data ?? [],
   });
 
   const addCat = async () => {
@@ -126,26 +134,29 @@ function TxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     setNewCat("");
     await qc.invalidateQueries({ queryKey: ["cats", form.type] });
     if (data) setForm(f => ({ ...f, category_id: (data as any).id }));
-    toast.success("Categoria criada");
   };
 
   const save = async () => {
-    if (!user || !form.amount || !form.category_id) { toast.error("Preencha os campos obrigatórios"); return; }
+    const amt = parseNum(form.amount);
+    if (!user || amt <= 0 || !form.category_id) { toast.error("Preencha os campos obrigatórios"); return; }
     setLoading(true);
     const payload: any = {
       user_id: user.id,
       type: form.type,
-      amount: Number(form.amount),
+      amount: amt,
       description: form.description || null,
       transaction_date: form.transaction_date,
       bank_account_id: form.bank_account_id || null,
+      income_category_id: form.type === "receita" ? form.category_id : null,
+      expense_category_id: form.type === "despesa" ? form.category_id : null,
     };
-    if (form.type === "receita") payload.income_category_id = form.category_id;
-    else payload.expense_category_id = form.category_id;
     const { error } = await supabase.from("transactions").insert(payload as never);
     setLoading(false);
-    if (error) toast.error(error.message);
-    else { toast.success("Transação registada"); onClose(); }
+    if (error) { toast.error(error.message); return; }
+    toast.success("Transação registada");
+    setForm({ type: form.type, amount: "", description: "", transaction_date: format(new Date(), "yyyy-MM-dd"), category_id: "", bank_account_id: "" });
+    onSaved();
+    onClose();
   };
 
   return (
@@ -158,7 +169,7 @@ function TxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             </button>
           ))}
         </div>
-        <Field label="Valor (Kz)"><TextInput type="number" step="any" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></Field>
+        <Field label="Valor (Kz)"><TextInput inputMode="decimal" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="ex.: 1500,50" /></Field>
         <Field label="Categoria">
           <SelectInput value={form.category_id} onChange={e => setForm({ ...form, category_id: e.target.value })}>
             <option value="">Selecionar...</option>
@@ -171,7 +182,7 @@ function TxModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         </Field>
         <Field label="Conta (opcional)"><SelectInput value={form.bank_account_id} onChange={e => setForm({ ...form, bank_account_id: e.target.value })}>
           <option value="">—</option>
-          {(accounts ?? []).map((a: any) => <option key={a.id} value={a.id}>{a.bank_name} — {a.account_name}</option>)}
+          {(accounts ?? []).map((a: any) => <option key={a.id} value={a.id}>{a.bank_name}</option>)}
         </SelectInput></Field>
         <Field label="Data"><TextInput type="date" value={form.transaction_date} onChange={e => setForm({ ...form, transaction_date: e.target.value })} /></Field>
         <Field label="Descrição"><TextArea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></Field>

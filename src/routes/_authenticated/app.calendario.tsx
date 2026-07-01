@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatDate, formatKz } from "@/lib/format";
-import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, TextArea, SelectWithCustom } from "@/components/ui-kit";
+import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, SelectWithCustom } from "@/components/ui-kit";
 import { Plus, Trash2, Calendar as CalIcon, CheckCircle2, Circle, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,9 +27,14 @@ const EVENT_TYPES = [
   { value: "reuniao", label: "Reunião", dir: "neutro" },
 ] as const;
 
-function labelFor(type: string, custom?: string) {
+const parseNum = (s: string) => {
+  const n = Number(String(s ?? "").replace(/\s/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+};
+
+function labelFor(category: string, custom?: string) {
   if (custom) return custom;
-  return EVENT_TYPES.find(t => t.value === type)?.label ?? type;
+  return EVENT_TYPES.find(t => t.value === category)?.label ?? category;
 }
 
 function Page() {
@@ -50,8 +55,8 @@ function Page() {
   const done = (events ?? []).filter((e: any) => e.status === "efetuado");
 
   const del = async (id: string) => {
-    await supabase.from("calendar_events").delete().eq("id", id);
     await supabase.from("transactions").delete().eq("source_event_id", id);
+    await supabase.from("calendar_events").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["events"] });
     qc.invalidateQueries({ queryKey: ["transactions"] });
   };
@@ -59,23 +64,20 @@ function Page() {
   const toggleStatus = async (e: any) => {
     if (!user) return;
     if (e.status === "efetuado") {
-      // desfazer
       await supabase.from("transactions").delete().eq("source_event_id", e.id);
       await supabase.from("calendar_events").update({ status: "pendente" } as never).eq("id", e.id);
       toast.success("Marcado como não efetuado");
     } else {
-      // efetuar — cria transação se tiver valor + direção
       await supabase.from("calendar_events").update({ status: "efetuado" } as never).eq("id", e.id);
       if (e.amount && (e.direction === "despesa" || e.direction === "receita")) {
-        const payload: any = {
+        await supabase.from("transactions").insert({
           user_id: user.id,
           type: e.direction,
           amount: Number(e.amount),
-          description: labelFor(e.event_type, e.custom_type) + (e.title ? ` — ${e.title}` : ""),
+          description: labelFor(e.category, e.custom_type) + (e.title ? ` — ${e.title}` : ""),
           transaction_date: e.event_date,
           source_event_id: e.id,
-        };
-        await supabase.from("transactions").insert(payload as never);
+        } as never);
       }
       toast.success("Marcado como efetuado");
     }
@@ -121,8 +123,8 @@ function Section({ title, items, toggleStatus, del, muted, variant }: any) {
               {e.direction === "receita" ? <ArrowUpCircle className="h-4 w-4" /> : e.direction === "despesa" ? <ArrowDownCircle className="h-4 w-4" /> : <CalIcon className="h-4 w-4" />}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-medium truncate">{e.title || labelFor(e.event_type, e.custom_type)}</div>
-              <div className="text-xs text-muted-foreground truncate">{labelFor(e.event_type, e.custom_type)} · {formatDate(e.event_date)}</div>
+              <div className="font-medium truncate">{e.title || labelFor(e.category, e.custom_type)}</div>
+              <div className="text-xs text-muted-foreground truncate">{labelFor(e.category, e.custom_type)} · {formatDate(e.event_date)}</div>
             </div>
             {e.amount != null && (
               <div className={`font-semibold text-right shrink-0 hidden sm:block ${e.direction === "receita" ? "text-success" : e.direction === "despesa" ? "text-destructive" : ""}`}>
@@ -141,22 +143,20 @@ function EventModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
   const [form, setForm] = useState({
     title: "",
-    event_type: "renda_casa",
+    category: "renda_casa",
     custom_type: "",
     event_date: "",
-    description: "",
     amount: "",
     direction: "despesa" as "despesa" | "receita" | "neutro",
   });
   const [loading, setLoading] = useState(false);
 
-  // Auto-ajustar direção quando muda tipo (a não ser que seja "personalizado")
   const onTypeChange = (v: string) => {
     if (v === "__custom__") {
-      setForm({ ...form, event_type: "outro", custom_type: form.custom_type || " " });
+      setForm({ ...form, category: "outro", custom_type: form.custom_type || " " });
     } else {
       const def = EVENT_TYPES.find(t => t.value === v);
-      setForm({ ...form, event_type: v, custom_type: "", direction: (def?.dir as any) ?? "neutro" });
+      setForm({ ...form, category: v, custom_type: "", direction: (def?.dir as any) ?? "neutro" });
     }
   };
 
@@ -168,12 +168,11 @@ function EventModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     setLoading(true);
     const { error } = await supabase.from("calendar_events").insert({
       user_id: user.id,
-      title: form.title || labelFor(form.event_type, form.custom_type),
-      event_type: form.event_type,
+      title: form.title || labelFor(form.category, form.custom_type),
+      category: form.category,
       custom_type: isCustom ? form.custom_type.trim() : null,
       event_date: form.event_date,
-      description: form.description || null,
-      amount: form.amount ? Number(form.amount) : null,
+      amount: form.amount ? parseNum(form.amount) : null,
       direction: form.direction,
       status: "pendente",
     } as never);
@@ -181,7 +180,7 @@ function EventModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     if (error) toast.error(error.message);
     else {
       toast.success("Evento criado");
-      setForm({ title: "", event_type: "renda_casa", custom_type: "", event_date: "", description: "", amount: "", direction: "despesa" });
+      setForm({ title: "", category: "renda_casa", custom_type: "", event_date: "", amount: "", direction: "despesa" });
       onClose();
     }
   };
@@ -191,11 +190,10 @@ function EventModal({ open, onClose }: { open: boolean; onClose: () => void }) {
       <div className="space-y-3">
         <SelectWithCustom
           label="Tipo"
-          value={isCustom ? form.custom_type : form.event_type}
+          value={isCustom ? form.custom_type : form.category}
           onChange={(v) => {
-            // Se o utilizador estava em custom e está a escrever, atualiza custom_type
             if (isCustom || v === " ") {
-              setForm({ ...form, event_type: "outro", custom_type: v });
+              setForm({ ...form, category: "outro", custom_type: v });
             } else {
               onTypeChange(v);
             }
@@ -206,7 +204,7 @@ function EventModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         <Field label="Título (opcional)"><TextInput value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Ex.: Renda de Julho" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Data"><TextInput type="date" value={form.event_date} onChange={e => setForm({ ...form, event_date: e.target.value })} /></Field>
-          <Field label="Valor (Kz, opcional)"><TextInput type="number" step="any" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></Field>
+          <Field label="Valor (Kz, opcional)"><TextInput inputMode="decimal" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></Field>
         </div>
         <Field label="Movimento">
           <SelectInput value={form.direction} onChange={e => setForm({ ...form, direction: e.target.value as any })}>
@@ -215,7 +213,6 @@ function EventModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             <option value="neutro">Sem movimento</option>
           </SelectInput>
         </Field>
-        <Field label="Descrição"><TextArea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></Field>
         <p className="text-xs text-muted-foreground">Ao marcar como <b>efetuado</b>, o valor é registado automaticamente como {form.direction === "receita" ? "receita" : "despesa"} no histórico.</p>
         <div className="flex gap-2 justify-end pt-2">
           <GhostButton onClick={onClose}>Cancelar</GhostButton>

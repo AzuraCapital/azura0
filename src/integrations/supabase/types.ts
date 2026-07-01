@@ -90,6 +90,7 @@ export type Database = {
           acquisition_date: string | null
           asset_category_id: string
           created_at: string
+          currency: string
           custody_account_id: string | null
           id: string
           invested_amount: number
@@ -103,6 +104,7 @@ export type Database = {
           acquisition_date?: string | null
           asset_category_id: string
           created_at?: string
+          currency?: string
           custody_account_id?: string | null
           id?: string
           invested_amount?: number
@@ -116,6 +118,7 @@ export type Database = {
           acquisition_date?: string | null
           asset_category_id?: string
           created_at?: string
+          currency?: string
           custody_account_id?: string | null
           id?: string
           invested_amount?: number

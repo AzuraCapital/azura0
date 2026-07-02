@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { formatKz } from "@/lib/format";
-import { TrendingUp, TrendingDown, Wallet, Target, PieChart as PieIcon } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend } from "recharts";
+import { formatKz, formatDate } from "@/lib/format";
+import { TrendingUp, Wallet, Target, PieChart as PieIcon, Layers } from "lucide-react";
+import { ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Legend } from "recharts";
 import { useAuth } from "@/lib/auth";
-import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/app/")({
-  head: () => ({ meta: [{ title: "Dashboard — Azura Capital" }] }),
+  head: () => ({ meta: [{ title: "Património — Azura Capital" }] }),
   component: Dashboard,
 });
 
@@ -22,46 +22,39 @@ function Dashboard() {
     queryKey: ["dashboard", uid],
     enabled: !!uid,
     queryFn: async () => {
-      const [assets, banks, liab, goals, txns, assetCats] = await Promise.all([
-        supabase.from("assets").select("invested_amount, asset_category_id, acquisition_date"),
-        supabase.from("bank_accounts").select("current_balance"),
-        supabase.from("liabilities").select("amount, type"),
-        supabase.from("goals").select("*").order("is_primary", { ascending: false }).limit(1),
-        supabase.from("transactions").select("type, amount, transaction_date").gte("transaction_date", format(startOfMonth(new Date()), "yyyy-MM-dd")).lte("transaction_date", format(endOfMonth(new Date()), "yyyy-MM-dd")),
+      const ms = format(startOfMonth(new Date()), "yyyy-MM-dd");
+      const me = format(endOfMonth(new Date()), "yyyy-MM-dd");
+      const [assets, banks, goals, txns, assetCats] = await Promise.all([
+        supabase.from("assets").select("invested_amount, asset_category_id, quantity"),
+        supabase.from("bank_accounts").select("current_balance, currency"),
+        supabase.from("goals").select("*").order("is_primary", { ascending: false }).limit(3),
+        supabase.from("transactions").select("type, amount, transaction_date").gte("transaction_date", ms).lte("transaction_date", me),
         supabase.from("asset_categories").select("id, name"),
       ]);
+      const assetCount = (assets.data ?? []).length;
       const invested = (assets.data ?? []).reduce((s, a) => s + Number(a.invested_amount), 0);
-      const bankTotal = (banks.data ?? []).reduce((s, b) => s + Number(b.current_balance), 0);
-      const liabTotal = (liab.data ?? []).filter(l => l.type !== "divida_a_receber").reduce((s, l) => s + Number(l.amount), 0);
-      const receivable = (liab.data ?? []).filter(l => l.type === "divida_a_receber").reduce((s, l) => s + Number(l.amount), 0);
-      const net = invested + bankTotal + receivable - liabTotal;
+      const bankTotal = (banks.data ?? []).filter(b => b.currency === "AOA").reduce((s, b) => s + Number(b.current_balance), 0);
 
-      // pie by category
       const catMap = new Map((assetCats.data ?? []).map(c => [c.id, c.name]));
       const byCat = new Map<string, number>();
       (assets.data ?? []).forEach(a => {
         const name = catMap.get(a.asset_category_id) || "Outros";
         byCat.set(name, (byCat.get(name) ?? 0) + Number(a.invested_amount));
       });
-      const pie = Array.from(byCat.entries()).map(([name, value]) => ({ name, value }));
+      const totalPie = Array.from(byCat.values()).reduce((s, v) => s + v, 0);
+      const pie = Array.from(byCat.entries()).map(([name, value]) => ({ name, value, pct: totalPie > 0 ? (value / totalPie) * 100 : 0 }));
 
-      // monthly evolution (last 12m cumulative invested)
-      const months = Array.from({ length: 12 }).map((_, i) => subMonths(new Date(), 11 - i));
-      const line = months.map(m => {
-        const cut = endOfMonth(m);
-        const v = (assets.data ?? []).filter(a => a.acquisition_date && new Date(a.acquisition_date) <= cut).reduce((s, a) => s + Number(a.invested_amount), 0);
-        return { month: format(m, "MMM"), value: v + bankTotal };
-      });
-
-      // bar chart receitas vs despesas
       const rec = (txns.data ?? []).filter(t => t.type === "receita").reduce((s, t) => s + Number(t.amount), 0);
       const desp = (txns.data ?? []).filter(t => t.type === "despesa").reduce((s, t) => s + Number(t.amount), 0);
-      const bars = [{ name: "Este mês", Receitas: rec, Despesas: desp }];
+      const totalRD = rec + desp;
+      const rdPie = totalRD > 0
+        ? [
+            { name: "Receitas", value: rec, pct: (rec / totalRD) * 100, color: "#22C55E" },
+            { name: "Despesas", value: desp, pct: (desp / totalRD) * 100, color: "#EF4444" },
+          ]
+        : [];
 
-      const goal = (goals.data ?? [])[0];
-      const goalPct = goal ? Math.min(100, (Number(goal.current_amount) / Number(goal.target_amount)) * 100) : 0;
-
-      return { invested, bankTotal, liabTotal, net, pie, line, bars, goal, goalPct };
+      return { assetCount, invested, bankTotal, pie, rdPie, goals: goals.data ?? [] };
     },
   });
 
@@ -79,70 +72,44 @@ function Dashboard() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-     <div>
-  <p className="text-base sm:text-lg font-bold text-primary">
-    {greeting}{name ? ", " : ""}{name ? <span className="text-foreground">{name}</span> : ""} {emoji}
-  </p>
-  <p className="text-sm text-muted-foreground capitalize mt-0.5">{today}</p>
-  <h1 className="text-3xl font-bold mt-2">Dashboard</h1>
-  <p className="text-sm text-muted-foreground">Visão geral do seu património</p>
-</div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard icon={Wallet} label="Património Líquido" value={formatKz(data?.net ?? 0)} positive />
-        <MetricCard icon={Wallet} label="Saldo Contas" value={formatKz(data?.bankTotal ?? 0)} />
-        <MetricCard icon={TrendingUp} label="Total Investido" value={formatKz(data?.invested ?? 0)} positive />
-        <MetricCard icon={TrendingDown} label="Passivos" value={formatKz(data?.liabTotal ?? 0)} negative />
+      <div>
+        <p className="text-base sm:text-lg font-bold text-primary">
+          {greeting}{name ? ", " : ""}{name ? <span className="text-foreground">{name}</span> : ""} {emoji}
+        </p>
+        <p className="text-sm text-muted-foreground capitalize mt-0.5">{today}</p>
+        <h1 className="text-3xl font-bold mt-2">Património</h1>
+        <p className="text-sm text-muted-foreground">Visão consolidada — todos os valores são atualizados automaticamente pelos módulos</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="glass rounded-3xl p-6 lg:col-span-2">
-          <h3 className="font-semibold mb-4 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> Evolução (12 meses)</h3>
-          <div className="h-72">
-            <ResponsiveContainer>
-              <LineChart data={data?.line ?? []}>
-                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `${(v / 1_000_000).toFixed(0)}M`} />
-                <Tooltip formatter={(v: number) => formatKz(v)} contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }} />
-                <Line type="monotone" dataKey="value" stroke="#1A8C3A" strokeWidth={3} dot={{ fill: "#22C55E", r: 4 }} animationDuration={800} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="glass rounded-3xl p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> Meta principal</h3>
-          {data?.goal ? (
-            <div className="text-center py-4">
-              <div className="relative inline-flex items-center justify-center">
-                <svg className="w-36 h-36 -rotate-90">
-                  <circle cx="72" cy="72" r="60" stroke="var(--muted)" strokeWidth="10" fill="none" />
-                  <circle cx="72" cy="72" r="60" stroke="url(#g1)" strokeWidth="10" fill="none" strokeDasharray={`${(data.goalPct / 100) * 377} 377`} strokeLinecap="round" />
-                  <defs><linearGradient id="g1"><stop offset="0" stopColor="#1A8C3A" /><stop offset="1" stopColor="#22C55E" /></linearGradient></defs>
-                </svg>
-                <div className="absolute text-2xl font-bold">{data.goalPct.toFixed(0)}%</div>
-              </div>
-              <div className="mt-4 font-medium">{data.goal.name}</div>
-              <div className="text-xs text-muted-foreground">{formatKz(data.goal.current_amount)} / {formatKz(data.goal.target_amount)}</div>
-            </div>
-          ) : (
-            <div className="text-center py-12 text-sm text-muted-foreground">Defina um objetivo principal em Objetivos</div>
-          )}
-        </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <MetricCard icon={Layers} label="Quantidade de Ativos" value={String(data?.assetCount ?? 0)} />
+        <MetricCard icon={Wallet} label="Saldo Bancário" value={formatKz(data?.bankTotal ?? 0)} positive={((data?.bankTotal ?? 0) >= 0)} negative={((data?.bankTotal ?? 0) < 0)} />
+        <MetricCard icon={TrendingUp} label="Carteira de Investimento" value={formatKz(data?.invested ?? 0)} positive />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="glass rounded-3xl p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2"><PieIcon className="h-4 w-4 text-primary" /> Carteira por tipo</h3>
-          <div className="h-64">
+          <h3 className="font-semibold mb-4 flex items-center gap-2"><PieIcon className="h-4 w-4 text-primary" /> Carteira de Investimento</h3>
+          <div className="h-72">
             {(data?.pie ?? []).length ? (
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={data!.pie} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} animationDuration={800}>
+                  <Pie
+                    data={data!.pie}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={95}
+                    animationDuration={800}
+                    label={(e: any) => `${e.pct.toFixed(0)}%`}
+                  >
                     {data!.pie.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
-                  <Tooltip formatter={(v: number) => formatKz(v)} />
-                  <Legend />
+                  <Tooltip formatter={(v: number, _n: string, p: any) => [`${formatKz(v)} · ${p.payload.pct.toFixed(1)}%`, p.payload.name]} />
+                  <Legend
+                    verticalAlign="bottom"
+                    formatter={(value: string, entry: any) => `${value} — ${formatKz(entry.payload.value)}`}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : <Empty msg="Sem investimentos ainda" />}
@@ -151,19 +118,58 @@ function Dashboard() {
 
         <div className="glass rounded-3xl p-6">
           <h3 className="font-semibold mb-4">Receitas vs Despesas (mês)</h3>
-          <div className="h-64">
-            <ResponsiveContainer>
-              <BarChart data={data?.bars ?? []}>
-                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: number) => formatKz(v)} contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }} />
-                <Legend />
-                <Bar dataKey="Receitas" fill="#22C55E" radius={[8, 8, 0, 0]} animationDuration={800} />
-                <Bar dataKey="Despesas" fill="#EF4444" radius={[8, 8, 0, 0]} animationDuration={800} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-72">
+            {(data?.rdPie ?? []).length ? (
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={data!.rdPie}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={95}
+                    animationDuration={800}
+                    label={(e: any) => `${e.pct.toFixed(0)}%`}
+                  >
+                    {data!.rdPie.map((s, i) => <Cell key={i} fill={s.color} />)}
+                  </Pie>
+                  <Tooltip formatter={(v: number, _n: string, p: any) => [`${formatKz(v)} · ${p.payload.pct.toFixed(1)}%`, p.payload.name]} />
+                  <Legend
+                    verticalAlign="bottom"
+                    formatter={(value: string, entry: any) => `${value} — ${formatKz(entry.payload.value)}`}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : <Empty msg="Sem movimentos este mês" />}
           </div>
         </div>
+      </div>
+
+      <div className="glass rounded-3xl p-6">
+        <h3 className="font-semibold mb-4 flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> Metas prioritárias</h3>
+        {(data?.goals ?? []).length === 0 ? (
+          <Empty msg="Sem metas definidas. Adicione objetivos na secção Objetivos." />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {(data?.goals ?? []).slice(0, 2).map((g: any) => {
+              const pct = Math.min(100, (Number(g.current_amount) / Number(g.target_amount)) * 100);
+              return (
+                <div key={g.id} className="rounded-2xl border border-border/60 p-5">
+                  <div className="font-semibold truncate">{g.name}</div>
+                  <div className="mt-3 h-3 rounded-full bg-secondary overflow-hidden">
+                    <div className="h-full gradient-primary" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div><span className="text-muted-foreground">Atual: </span><span className="font-medium">{formatKz(g.current_amount)}</span></div>
+                    <div className="text-right"><span className="text-muted-foreground">Alvo: </span><span className="font-medium">{formatKz(g.target_amount)}</span></div>
+                    <div><span className="text-muted-foreground">Progressão: </span><span className="font-medium">{pct.toFixed(0)}%</span></div>
+                    {g.target_date && <div className="text-right"><span className="text-muted-foreground">Data alvo: </span><span className="font-medium">{formatDate(g.target_date)}</span></div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -178,11 +184,11 @@ function MetricCard({ icon: Icon, label, value, positive, negative }: any) {
           <Icon className="h-4 w-4" />
         </div>
       </div>
-      <div className="text-2xl font-bold">{value}</div>
+      <div className={`text-2xl font-bold ${negative ? "text-destructive" : ""}`}>{value}</div>
     </div>
   );
 }
 
 function Empty({ msg }: { msg: string }) {
-  return <div className="h-full flex items-center justify-center text-sm text-muted-foreground">{msg}</div>;
+  return <div className="h-full flex items-center justify-center text-sm text-muted-foreground text-center px-6">{msg}</div>;
 }

@@ -59,11 +59,21 @@ function Page() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label={`Receitas (${period})`} value={formatKz(rec)} icon={ArrowUpCircle} color="success" />
-        <StatCard label={`Despesas (${period})`} value={formatKz(desp)} icon={ArrowDownCircle} color="destructive" />
-        <StatCard label="Saldo Disponível" value={formatKz(rec - desp)} icon={ArrowUpCircle} color={rec - desp >= 0 ? "success" : "destructive"} />
-      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+  <StatCard
+    label={`Receitas (${period})`}
+    value={formatKz(rec)}
+    icon={ArrowUpCircle}
+    color="success"
+  />
+
+  <StatCard
+    label={`Despesas (${period})`}
+    value={formatKz(desp)}
+    icon={ArrowDownCircle}
+    color="destructive"
+  />
+</div>
 
       <div className="flex gap-2 flex-wrap">
         {(["todos", "receita", "despesa"] as const).map(t => (

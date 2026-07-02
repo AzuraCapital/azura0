@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatKz, formatDate } from "@/lib/format";
-import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, SelectWithCustom } from "@/components/ui-kit";
+import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput } from "@/components/ui-kit";
 import { Plus, Trash2, Target, Star } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,13 +13,8 @@ export const Route = createFileRoute("/_authenticated/app/objetivos")({
   component: Page,
 });
 
-const GOAL_PRESETS = [
-  { value: "Comprar casa", label: "Comprar casa" },
-  { value: "Comprar carro", label: "Comprar carro" },
-  { value: "Pagar dívida", label: "Pagar dívida" },
-  { value: "Reserva de emergência", label: "Reserva de emergência" },
-  { value: "Viagem", label: "Viagem" },
-];
+const DEFAULT_CATS = ["Comprar casa", "Comprar carro", "Pagar dívida", "Reserva de emergência", "Viagem"];
+const CATS_KEY = "azura_goal_categories";
 
 const parseNum = (s: string) => {
   const n = Number(String(s ?? "").replace(/\s/g, "").replace(",", "."));
@@ -27,6 +22,20 @@ const parseNum = (s: string) => {
 };
 
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+function loadCats(): string[] {
+  if (typeof window === "undefined") return DEFAULT_CATS;
+  try {
+    const raw = localStorage.getItem(CATS_KEY);
+    if (!raw) return DEFAULT_CATS;
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) && arr.length ? arr : DEFAULT_CATS;
+  } catch { return DEFAULT_CATS; }
+}
+function saveCats(list: string[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(CATS_KEY, JSON.stringify(list));
+}
 
 function Page() {
   const { user } = useAuth();
@@ -99,6 +108,8 @@ function Page() {
 function GoalModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
   const now = new Date();
+  const [cats, setCats] = useState<string[]>(loadCats());
+  const [newCat, setNewCat] = useState("");
   const [form, setForm] = useState({
     name: "",
     notes: "",
@@ -108,6 +119,16 @@ function GoalModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     target_year: String(now.getFullYear() + 1),
   });
   const [loading, setLoading] = useState(false);
+
+  const addCat = () => {
+    const v = newCat.trim();
+    if (!v) return;
+    if (cats.includes(v)) { setForm(f => ({ ...f, name: v })); setNewCat(""); return; }
+    const next = [...cats, v];
+    setCats(next); saveCats(next);
+    setForm(f => ({ ...f, name: v }));
+    setNewCat("");
+  };
 
   const save = async () => {
     if (!user || !form.name.trim() || !form.target_amount) { toast.error("Preencha os campos obrigatórios"); return; }
@@ -133,14 +154,16 @@ function GoalModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <Modal open={open} onClose={onClose} title="Novo Objetivo">
       <div className="space-y-3">
-        <SelectWithCustom
-          label="Nome"
-          value={form.name}
-          onChange={v => setForm({ ...form, name: v.trim() === "" ? "" : v })}
-          options={GOAL_PRESETS}
-          customLabel="Personalizado..."
-          placeholder="Selecionar categoria..."
-        />
+        <Field label="Categoria">
+          <SelectInput value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}>
+            <option value="">Selecionar categoria...</option>
+            {cats.map(c => <option key={c} value={c}>{c}</option>)}
+          </SelectInput>
+          <div className="flex gap-2 mt-2">
+            <TextInput placeholder="+ Nova categoria" value={newCat} onChange={e => setNewCat(e.target.value)} />
+            <GhostButton onClick={addCat} type="button">Criar</GhostButton>
+          </div>
+        </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Meta (Kz)"><TextInput inputMode="decimal" value={form.target_amount} onChange={e => setForm({ ...form, target_amount: e.target.value })} /></Field>
           <Field label="Atual (Kz)"><TextInput inputMode="decimal" value={form.current_amount} onChange={e => setForm({ ...form, current_amount: e.target.value })} /></Field>

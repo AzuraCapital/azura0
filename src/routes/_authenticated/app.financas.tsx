@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatKz, formatDate } from "@/lib/format";
 import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, TextArea } from "@/components/ui-kit";
 import { Plus, Trash2, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/app/financas")({
   head: () => ({ meta: [{ title: "Finanças — Azura Capital" }] }),
@@ -24,45 +24,56 @@ function Page() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"todos" | "receita" | "despesa">("todos");
+  const [period, setPeriod] = useState<"mensal" | "anual">("mensal");
 
   const { data: txns } = useQuery({
     queryKey: ["transactions", user?.id],
     enabled: !!user,
-    queryFn: async () => (await supabase.from("transactions").select("*, income_categories(name), expense_categories(name), bank_accounts(bank_name)").order("transaction_date", { ascending: false }).limit(200)).data ?? [],
+    queryFn: async () => (await supabase.from("transactions").select("*, income_categories(name), expense_categories(name), bank_accounts(bank_name)").order("transaction_date", { ascending: false }).limit(500)).data ?? [],
   });
 
-  const filtered = (txns ?? []).filter((t: any) => tab === "todos" || t.type === tab);
+  const range = useMemo(() => {
+    const now = new Date();
+    if (period === "mensal") return { s: format(startOfMonth(now), "yyyy-MM-dd"), e: format(endOfMonth(now), "yyyy-MM-dd") };
+    return { s: format(startOfYear(now), "yyyy-MM-dd"), e: format(endOfYear(now), "yyyy-MM-dd") };
+  }, [period]);
 
-  const monthStart = format(startOfMonth(new Date()), "yyyy-MM-dd");
-  const monthEnd = format(endOfMonth(new Date()), "yyyy-MM-dd");
-  const monthTx = (txns ?? []).filter((t: any) => t.transaction_date >= monthStart && t.transaction_date <= monthEnd);
-  const rec = monthTx.filter((t: any) => t.type === "receita").reduce((s, t: any) => s + Number(t.amount), 0);
-  const desp = monthTx.filter((t: any) => t.type === "despesa").reduce((s, t: any) => s + Number(t.amount), 0);
+  const periodTx = (txns ?? []).filter((t: any) => t.transaction_date >= range.s && t.transaction_date <= range.e);
+  const filtered = periodTx.filter((t: any) => tab === "todos" || t.type === tab);
+  const rec = periodTx.filter((t: any) => t.type === "receita").reduce((s, t: any) => s + Number(t.amount), 0);
+  const desp = periodTx.filter((t: any) => t.type === "despesa").reduce((s, t: any) => s + Number(t.amount), 0);
 
   const del = async (id: string) => {
     await supabase.from("transactions").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["transactions"] });
+    qc.invalidateQueries({ queryKey: ["bank_accounts"] });
   };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <PageHeader title="Finanças Pessoais" subtitle="Receitas e despesas" action={<PrimaryButton onClick={() => setOpen(true)}><Plus className="h-4 w-4 inline mr-1" /> Nova Transação</PrimaryButton>} />
 
+      <div className="flex gap-2">
+        {(["mensal", "anual"] as const).map(p => (
+          <button key={p} onClick={() => setPeriod(p)} className={`rounded-full px-4 py-1.5 text-sm font-medium ${period === p ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>{p === "mensal" ? "Mensal" : "Anual"}</button>
+        ))}
+      </div>
+
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Receitas (mês)" value={formatKz(rec)} icon={ArrowUpCircle} color="success" />
-        <StatCard label="Despesas (mês)" value={formatKz(desp)} icon={ArrowDownCircle} color="destructive" />
-        <StatCard label="Saldo (mês)" value={formatKz(rec - desp)} icon={ArrowUpCircle} color={rec - desp >= 0 ? "success" : "destructive"} />
+        <StatCard label={`Receitas (${period})`} value={formatKz(rec)} icon={ArrowUpCircle} color="success" />
+        <StatCard label={`Despesas (${period})`} value={formatKz(desp)} icon={ArrowDownCircle} color="destructive" />
+        <StatCard label="Saldo Disponível" value={formatKz(rec - desp)} icon={ArrowUpCircle} color={rec - desp >= 0 ? "success" : "destructive"} />
       </div>
 
       <div className="flex gap-2 flex-wrap">
         {(["todos", "receita", "despesa"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${tab === t ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+          <button key={t} onClick={() => setTab(t)} className={`rounded-full px-4 py-1.5 text-sm font-medium ${tab === t ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
         ))}
       </div>
 
       <div className="glass rounded-3xl overflow-hidden">
         {filtered.length === 0 ? (
-          <div className="p-12 text-center text-sm text-muted-foreground">Sem transações.</div>
+          <div className="p-12 text-center text-sm text-muted-foreground">Sem transações no período.</div>
         ) : (
           <div className="divide-y divide-border/50">
             {filtered.map((t: any) => {
@@ -74,7 +85,7 @@ function Page() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{t.description || cat?.name || "Sem descrição"}</div>
-                    <div className="text-xs text-muted-foreground truncate">{cat?.name} · {formatDate(t.transaction_date)} {t.bank_accounts && `· ${t.bank_accounts.bank_name}`}</div>
+                    <div className="text-xs text-muted-foreground truncate">{cat?.name} · {formatDate(t.transaction_date)}{t.bank_accounts && ` · ${t.bank_accounts.bank_name}`}</div>
                   </div>
                   <div className={`font-semibold text-right shrink-0 ${t.type === "receita" ? "text-success" : "text-destructive"}`}>
                     {t.type === "receita" ? "+" : "-"}{formatKz(t.amount)}
@@ -89,6 +100,7 @@ function Page() {
 
       <TxModal open={open} onClose={() => setOpen(false)} onSaved={() => {
         qc.invalidateQueries({ queryKey: ["transactions"] });
+        qc.invalidateQueries({ queryKey: ["bank_accounts"] });
         qc.invalidateQueries({ queryKey: ["dashboard"] });
       }} />
     </div>
@@ -138,7 +150,7 @@ function TxModal({ open, onClose, onSaved }: { open: boolean; onClose: () => voi
 
   const save = async () => {
     const amt = parseNum(form.amount);
-    if (!user || amt <= 0 || !form.category_id) { toast.error("Preencha os campos obrigatórios"); return; }
+    if (!user || amt <= 0 || !form.category_id || !form.bank_account_id) { toast.error("Preencha valor, categoria e banco"); return; }
     setLoading(true);
     const payload: any = {
       user_id: user.id,
@@ -146,7 +158,7 @@ function TxModal({ open, onClose, onSaved }: { open: boolean; onClose: () => voi
       amount: amt,
       description: form.description || null,
       transaction_date: form.transaction_date,
-      bank_account_id: form.bank_account_id || null,
+      bank_account_id: form.bank_account_id,
       income_category_id: form.type === "receita" ? form.category_id : null,
       expense_category_id: form.type === "despesa" ? form.category_id : null,
     };
@@ -180,12 +192,13 @@ function TxModal({ open, onClose, onSaved }: { open: boolean; onClose: () => voi
             <GhostButton onClick={addCat} type="button">Criar</GhostButton>
           </div>
         </Field>
-        <Field label="Conta (opcional)"><SelectInput value={form.bank_account_id} onChange={e => setForm({ ...form, bank_account_id: e.target.value })}>
-          <option value="">—</option>
+        <Field label="Banco"><SelectInput value={form.bank_account_id} onChange={e => setForm({ ...form, bank_account_id: e.target.value })}>
+          <option value="">Selecionar...</option>
           {(accounts ?? []).map((a: any) => <option key={a.id} value={a.id}>{a.bank_name}</option>)}
         </SelectInput></Field>
         <Field label="Data"><TextInput type="date" value={form.transaction_date} onChange={e => setForm({ ...form, transaction_date: e.target.value })} /></Field>
         <Field label="Descrição"><TextArea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></Field>
+        <p className="text-xs text-muted-foreground">{form.type === "receita" ? "Vai creditar" : "Vai debitar"} o saldo do banco selecionado automaticamente.</p>
         <div className="flex gap-2 justify-end pt-2">
           <GhostButton onClick={onClose}>Cancelar</GhostButton>
           <PrimaryButton onClick={save} disabled={loading}>Guardar</PrimaryButton>

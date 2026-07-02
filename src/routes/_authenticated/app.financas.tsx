@@ -19,12 +19,25 @@ const parseNum = (s: string) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+const MONTHS = [
+  { value: 1, label: "Janeiro" }, { value: 2, label: "Fevereiro" },
+  { value: 3, label: "Março" }, { value: 4, label: "Abril" },
+  { value: 5, label: "Maio" }, { value: 6, label: "Junho" },
+  { value: 7, label: "Julho" }, { value: 8, label: "Agosto" },
+  { value: 9, label: "Setembro" }, { value: 10, label: "Outubro" },
+  { value: 11, label: "Novembro" }, { value: 12, label: "Dezembro" },
+];
+
+const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 2 + i);
+
 function Page() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"todos" | "receita" | "despesa">("todos");
   const [period, setPeriod] = useState<"mensal" | "anual">("mensal");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const { data: txns } = useQuery({
     queryKey: ["transactions", user?.id],
@@ -33,10 +46,13 @@ function Page() {
   });
 
   const range = useMemo(() => {
-    const now = new Date();
-    if (period === "mensal") return { s: format(startOfMonth(now), "yyyy-MM-dd"), e: format(endOfMonth(now), "yyyy-MM-dd") };
-    return { s: format(startOfYear(now), "yyyy-MM-dd"), e: format(endOfYear(now), "yyyy-MM-dd") };
-  }, [period]);
+    if (period === "mensal") {
+      const d = new Date(selectedYear, selectedMonth - 1, 1);
+      return { s: format(startOfMonth(d), "yyyy-MM-dd"), e: format(endOfMonth(d), "yyyy-MM-dd") };
+    }
+    const d = new Date(selectedYear, 0, 1);
+    return { s: format(startOfYear(d), "yyyy-MM-dd"), e: format(endOfYear(d), "yyyy-MM-dd") };
+  }, [period, selectedMonth, selectedYear]);
 
   const periodTx = (txns ?? []).filter((t: any) => t.transaction_date >= range.s && t.transaction_date <= range.e);
   const filtered = periodTx.filter((t: any) => tab === "todos" || t.type === tab);
@@ -51,33 +67,65 @@ function Page() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <PageHeader title="Finanças Pessoais" subtitle="Receitas e despesas" action={<PrimaryButton onClick={() => setOpen(true)}><Plus className="h-4 w-4 inline mr-1" /> Nova Transação</PrimaryButton>} />
+      <PageHeader
+        title="Finanças Pessoais"
+        subtitle="Receitas e despesas"
+        action={<PrimaryButton onClick={() => setOpen(true)}><Plus className="h-4 w-4 inline mr-1" /> Nova Transação</PrimaryButton>}
+      />
 
-      <div className="flex gap-2">
-        {(["mensal", "anual"] as const).map(p => (
-          <button key={p} onClick={() => setPeriod(p)} className={`rounded-full px-4 py-1.5 text-sm font-medium ${period === p ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>{p === "mensal" ? "Mensal" : "Anual"}</button>
-        ))}
+      {/* Toggle mensal/anual */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex gap-2">
+          {(["mensal", "anual"] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${period === p ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}
+            >
+              {p === "mensal" ? "Mensal" : "Anual"}
+            </button>
+          ))}
+        </div>
+
+        {/* Dropdowns de período */}
+        <div className="flex items-center gap-2">
+          {period === "mensal" && (
+            <select
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(Number(e.target.value))}
+              className="rounded-full border border-border bg-card px-4 py-1.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              {MONTHS.map(m => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+          )}
+          <select
+            value={selectedYear}
+            onChange={e => setSelectedYear(Number(e.target.value))}
+            className="rounded-full border border-border bg-card px-4 py-1.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            {YEARS.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-  <StatCard
-    label={`Receitas (${period})`}
-    value={formatKz(rec)}
-    icon={ArrowUpCircle}
-    color="success"
-  />
-
-  <StatCard
-    label={`Despesas (${period})`}
-    value={formatKz(desp)}
-    icon={ArrowDownCircle}
-    color="destructive"
-  />
-</div>
+        <StatCard label={`Receitas (${period === "mensal" ? MONTHS.find(m => m.value === selectedMonth)?.label : selectedYear})`} value={formatKz(rec)} icon={ArrowUpCircle} color="success" />
+        <StatCard label={`Despesas (${period === "mensal" ? MONTHS.find(m => m.value === selectedMonth)?.label : selectedYear})`} value={formatKz(desp)} icon={ArrowDownCircle} color="destructive" />
+      </div>
 
       <div className="flex gap-2 flex-wrap">
         {(["todos", "receita", "despesa"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`rounded-full px-4 py-1.5 text-sm font-medium ${tab === t ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${tab === t ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}
+          >
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
         ))}
       </div>
 

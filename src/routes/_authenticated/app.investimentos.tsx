@@ -220,17 +220,52 @@ function AssetModal({ open, onClose }: { open: boolean; onClose: () => void }) {
       notes: form.notes || null,
     } as never).select().single();
     if (!error && created) {
-      await supabase.from("asset_transactions").insert({
-        user_id: user.id,
-        asset_id: (created as any).id,
-        type: "compra",
-        quantity: qty > 0 ? qty : null,
-        unit_value: unit > 0 ? unit : null,
-        amount: total,
-        bank_account_id: bankId,
-        transaction_date: form.acquisition_date || new Date().toISOString().slice(0, 10),
-      } as never);
+
+    await supabase
+        .from("asset_transactions")
+        .insert({
+            user_id: user.id,
+            asset_id: created.id,
+            type: "compra",
+            quantity: qty > 0 ? qty : null,
+            unit_value: unit > 0 ? unit : null,
+            amount: total,
+            bank_account_id: bankId,
+            transaction_date:
+                form.acquisition_date ||
+                new Date().toISOString().slice(0,10),
+        });
+
+    /*
+     * Debitar automaticamente o banco
+     */
+
+    if (bankId){
+
+        const {data: bank} = await supabase
+            .from("bank_accounts")
+            .select("balance")
+            .eq("id",bankId)
+            .single();
+
+        if(bank){
+
+            await supabase
+                .from("bank_accounts")
+                .update({
+                    balance:Number(bank.balance)-total
+                })
+                .eq("id",bankId);
+
+        }
+
     }
+
+    await qc.invalidateQueries({
+        queryKey:["bank_accounts"]
+    });
+
+}
     setLoading(false);
     if (error) toast.error(error.message);
     else { toast.success("Ativo adicionado"); onClose(); }

@@ -83,7 +83,7 @@ function Page() {
         subtitle="Eventos, dívidas e despesas recorrentes"
         action={
           <div className="flex gap-2">
-            <GhostButton onClick={() => navigate({ to: "/app/calendario/dividas" })}>
+            <GhostButton onClick={() => navigate({ to: "/app/dividas" })}>
               Gestão de Dívida
             </GhostButton>
             <PrimaryButton onClick={() => setOpen(true)}>

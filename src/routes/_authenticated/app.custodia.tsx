@@ -61,7 +61,41 @@ function Page() {
                 <div className="rounded-full p-2 bg-primary/10 text-primary shrink-0"><Vault className="h-5 w-5" /></div>
                 <div className="min-w-0">
                   <div className="font-semibold truncate">{c.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{c.bank_accounts ? `Banco: ${c.bank_accounts.bank_name}` : "Sem banco associado"}</div>
+                 <div className="space-y-1 mt-1">
+
+    <div className="text-xs text-muted-foreground">
+
+        {c.bank_accounts
+            ? `Banco: ${c.bank_accounts.bank_name}`
+            : "Sem banco associado"}
+
+    </div>
+
+    <div className="text-xs text-muted-foreground">
+        Valor sob gestão
+    </div>
+
+    <div className="font-semibold text-primary">
+
+        {new Intl.NumberFormat("pt-PT", {
+            style: "currency",
+            currency: "AOA"
+        }).format(
+
+            (c.assets ?? []).reduce(
+
+                (total: number, asset: any) =>
+                    total + Number(asset.invested_amount ?? 0),
+
+                0
+
+            )
+
+        )}
+
+    </div>
+
+</div>
                 </div>
               </div>
               <button onClick={() => del(c.id)} className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>

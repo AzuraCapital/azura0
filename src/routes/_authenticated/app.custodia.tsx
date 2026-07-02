@@ -20,7 +20,20 @@ function Page() {
   const { data: custodies } = useQuery({
     queryKey: ["custody_accounts", user?.id],
     enabled: !!user,
-    queryFn: async () => (await supabase.from("custody_accounts").select("*, bank_accounts(bank_name, currency)").order("name")).data ?? [],
+    queryFn: async () => {
+
+    const { data: custodies } = await supabase
+        .from("custody_accounts")
+        .select(`
+            *,
+            bank_accounts(bank_name,currency),
+            assets(invested_amount)
+        `)
+        .order("name");
+
+    return custodies ?? [];
+
+},
   });
 
   const del = async (id: string) => {

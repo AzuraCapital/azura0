@@ -42,36 +42,42 @@ export type Database = {
         Row: {
           amount: number
           asset_id: string
+          bank_account_id: string | null
           created_at: string
           id: string
           notes: string | null
           quantity: number | null
           transaction_date: string
           type: string
+          unit_value: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           amount: number
           asset_id: string
+          bank_account_id?: string | null
           created_at?: string
           id?: string
           notes?: string | null
           quantity?: number | null
           transaction_date: string
           type: string
+          unit_value?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           amount?: number
           asset_id?: string
+          bank_account_id?: string | null
           created_at?: string
           id?: string
           notes?: string | null
           quantity?: number | null
           transaction_date?: string
           type?: string
+          unit_value?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -81,6 +87,13 @@ export type Database = {
             columns: ["asset_id"]
             isOneToOne: false
             referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -228,6 +241,7 @@ export type Database = {
       calendar_events: {
         Row: {
           amount: number | null
+          bank_account_id: string | null
           category: string | null
           created_at: string
           custom_type: string | null
@@ -243,6 +257,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          bank_account_id?: string | null
           category?: string | null
           created_at?: string
           custom_type?: string | null
@@ -258,6 +273,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          bank_account_id?: string | null
           category?: string | null
           created_at?: string
           custom_type?: string | null
@@ -271,10 +287,19 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       custody_accounts: {
         Row: {
+          bank_account_id: string | null
           created_at: string
           id: string
           name: string
@@ -282,6 +307,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bank_account_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -289,13 +315,22 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bank_account_id?: string | null
           created_at?: string
           id?: string
           name?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "custody_accounts_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents: {
         Row: {
@@ -643,7 +678,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      apply_bank_delta: {
+        Args: { _bank_id: string; _delta: number }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

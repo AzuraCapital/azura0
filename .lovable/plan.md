@@ -1,67 +1,99 @@
-## 1. Corrigir falha visual (divisão a meio da página)
+# Plano: Azura Capital — Plataforma de Gestão Patrimonial Sincronizada
 
-Causa: o modal usa `items-start sm:items-center` + `min-h-screen`/contentor com `overflow-y-auto` no overlay, criando uma "barra" visível entre o `max-h-[calc(100vh-2rem)]` do modal e o fundo. Vou simplificar para um overlay `fixed inset-0` realmente full-screen com o modal centrado e scroll interno, removendo qualquer ilusão de divisão.
+Vou transformar a app numa plataforma totalmente sincronizada. O núcleo é uma camada de sincronização automática entre Bancos, Investimentos, Finanças e Calendário, com Dashboard e Histórico apenas como consumidores.
 
-## 2. Calendário: novos tipos + tipos personalizados + status pago
+## 1. Camada de sincronização (base de tudo)
 
-- Acrescentar tipos pré-definidos: `renda_casa`, `propina_escolar`, `seguro`, `energia_agua`, `internet`, `divida_a_pagar`, `divida_a_receber` (além dos já existentes).
-- Permitir **tipo personalizado**: campo livre quando escolhe "Outro / Personalizado".
-- Adicionar coluna `status` ('pendente' | 'efetuado') + `amount` (Kz, opcional) + `direction` ('despesa' | 'receita' | 'neutro') em `calendar_events`.
-- Toggle "Marcar como efetuado / não efetuado" em cada evento.
-- Ao marcar como efetuado um evento com `amount` e `direction`, inserir uma `transactions` (income/expense) com referência ao evento (`source_event_id`), evitando duplicação.
+**Migração de base de dados**
+- `bank_accounts`: manter `current_balance`, mas passar a ser calculado (não editável pelo utilizador na criação).
+- `custody_accounts`: adicionar coluna `bank_account_id` (FK a `bank_accounts`).
+- `transactions`: garantir `bank_account_id` obrigatório em receita/despesa; adicionar `kind` (`receita | despesa | compra | venda | transferencia | calendario`) para o Histórico.
+- `asset_transactions`: garantir `type` (compra/venda), `quantity`, `unit_value`, `total_value`, `bank_account_id` (derivado da conta custódia).
+- `calendar_events`: `amount` obrigatório, `bank_account_id` obrigatório quando marcado efetuado.
+- Função SQL `apply_bank_delta(bank_id, delta)` + triggers em `transactions`, `asset_transactions` e `calendar_events` (quando `status = efetuado`) para atualizar `current_balance` automaticamente.
+- Trigger de venda: bloquear se `quantity > quantidade disponível` do ativo.
+- Trigger permite saldo negativo (com aviso no frontend), sem bloquear débito.
 
-## 3. Bancos: adicionar banco personalizado
+## 2. Dashboard → "Património"
 
-A lista pré-definida ganha opção "Outro…" que abre input livre para o nome do banco.
+- Header: título "Património"; toggle claro/escuro sempre visível no canto superior direito (mover para AppShell topbar).
+- Cartões renomeados e calculados dinamicamente:
+  - **Quantidade de Ativos** = `count(assets)` com quantidade > 0.
+  - **Saldo Bancário** = soma `current_balance`.
+  - **Carteira de Investimento** = soma `invested_amount` restante.
+  - Remover "Passivos".
+- Gráfico Receitas vs Despesas → **Pizza** com 2 fatias e legenda clara (valores + %).
+- Metas: mostrar 2 metas prioritárias com nome, barra de progressão, valor atual, valor alvo, data alvo.
+- "Carteira por tipo" → **Carteira de Investimento**: % por tipo, legenda com valor investido.
 
-## 4. Investimentos: adicionar categoria/ativo personalizado
+## 3. Investimentos
 
-Permitir criar nova `asset_categories` e nova `custody_accounts` direto do modal (botão "+ Novo" ao lado do select).
+- Subtítulo: "A sua carteira de investimentos."
+- Resumo topo: nº de ativos + valor total investido.
+- Filtro por categoria (chips com cores simples).
+- Campo **Quantidade opcional** (ativos como depósito a prazo).
+- **Compra**: qty × valor unitário = investido; debita banco associado à conta custódia.
+- **Venda**: valida qty disponível, credita banco associado, atualiza qty/investido restante, gera registo no histórico.
+- Nunca permitir venda > disponível (validação frontend + trigger DB).
 
-## 5. Finanças Pessoais: categorias personalizadas
+## 4. Bancos
 
-Permitir criar nova `income_categories` / `expense_categories` direto do modal (botão "+ Nova").
+- Remover campo "Valor" ao criar conta (saldo começa a 0 e é derivado).
+- Card por banco: **Saldo Disponível** (destaque vermelho se negativo).
+- Topo: **Saldo Total** somado.
+- Filtro por banco.
+- Aviso toast quando saldo fica negativo após débito.
 
-## 6. Remover Património
+## 5. Conta Custódia (novo módulo)
 
-- Apagar `src/routes/_authenticated/app.patrimonio.tsx` e link no `AppShell`.
-- Manter a tabela `liabilities` na base (não dropar agora — dados ficam preservados). Acessos passam pelo Calendário.
+- Nova rota `/app/custodia`.
+- CRUD associando cada custódia a um banco.
+- Usada em Investimentos: seleciona custódia → sistema deduz o banco automaticamente.
 
-## 7. Histórico unificado
+## 6. Objetivos
 
-Nova rota `app.historico.tsx` no menu lateral:
-- Lista cronológica unificada de `transactions` + eventos efetuados (com origem visível).
-- Filtros: tipo (receita/despesa), período (mês/ano), categoria.
-- Totais do período.
+- Manter "Adicionar novo objetivo".
+- Permitir "Nova categoria" inline.
+- Remover opção "Personalizado".
 
-## Alterações na base de dados (1 migração)
+## 7. Finanças Pessoais
 
-```sql
-ALTER TABLE public.calendar_events
-  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pendente',
-  ADD COLUMN IF NOT EXISTS amount numeric,
-  ADD COLUMN IF NOT EXISTS direction text,
-  ADD COLUMN IF NOT EXISTS custom_type text,
-  ADD COLUMN IF NOT EXISTS recurrence text;  -- 'mensal' | null
+- Renomear "Saldo" → "Saldo Disponível".
+- Filtros **Mensal / Anual**.
+- Receita/Despesa **obrigatoriamente** ligadas a um banco (credita/debita).
 
-ALTER TABLE public.transactions
-  ADD COLUMN IF NOT EXISTS source_event_id uuid REFERENCES public.calendar_events(id) ON DELETE SET NULL;
+## 8. Calendário Financeiro
 
-CREATE INDEX IF NOT EXISTS idx_tx_event ON public.transactions(source_event_id);
-```
+- Renomear "Calendário" → "Calendário Financeiro".
+- Campo **Valor obrigatório** + **Banco obrigatório**.
+- Remover placeholder "Sem movimentos".
+- Ao marcar efetuado: credita/debita banco selecionado + entra no Histórico.
 
-RLS e GRANTs já existentes cobrem as novas colunas.
+## 9. Histórico Financeiro
 
-## Ficheiros tocados
+- Renomear "Histórico" → "Histórico Financeiro".
+- Unificar movimentos: receitas, despesas, compras, vendas, transferências, eventos efetuados — todos com descrição legível.
+- Ordenação recente → antigo.
+- Filtros **Mensal / Anual**.
+- Remover "Saldo do mês"; manter Total Receitas + Total Despesas.
 
-- `src/components/ui-kit.tsx` — Modal sem divisão visual.
-- `src/components/AppShell.tsx` — remover "Património", adicionar "Histórico".
-- `src/routes/_authenticated/app.calendario.tsx` — novos tipos, custom, status, amount, integração transactions.
-- `src/routes/_authenticated/app.bancos.tsx` — banco custom.
-- `src/routes/_authenticated/app.investimentos.tsx` — categoria/custódia custom.
-- `src/routes/_authenticated/app.financas.tsx` — categoria custom.
-- `src/routes/_authenticated/app.historico.tsx` — novo.
-- `src/routes/_authenticated/app.patrimonio.tsx` — remover.
-- Migração SQL acima.
+## 10. Sidebar / AppShell
 
-Confirma para eu avançar?
+- Adicionar "Conta Custódia".
+- Renomear labels: Património, Calendário Financeiro, Histórico Financeiro.
+- ThemeToggle no topbar (sempre visível, mobile e desktop).
+- Todos os módulos invalidam React Query cache dos outros ao mutar (chaves partilhadas `["bank_accounts"]`, `["assets"]`, `["transactions"]`, `["dashboard"]`).
+
+## Detalhes técnicos
+
+- Nova migração SQL com triggers de sincronização (bancos ↔ transações ↔ investimentos ↔ calendário).
+- Sem quebrar dados existentes: backfill de `current_balance` a partir do soma de transações + saldo inicial.
+- Todas as queries do Dashboard passam a agregar dos módulos (nunca de coluna própria).
+- Validações de venda no frontend + trigger `BEFORE INSERT` como rede de segurança.
+
+## Fora do âmbito desta iteração
+
+- Transferências banco↔banco como fluxo dedicado (fica no Histórico se criado manualmente via SQL).
+- Notificações push (só toasts de aviso).
+
+Confirma que posso avançar e começo pela migração + camada de sincronização, depois refatoro os módulos por ordem: Bancos → Custódia → Investimentos → Finanças → Calendário → Histórico → Dashboard.

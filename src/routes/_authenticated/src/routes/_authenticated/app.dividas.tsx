@@ -8,7 +8,7 @@ import { PageHeader, GhostButton } from "@/components/ui-kit";
 import { CheckCircle2, Circle, ArrowUpCircle, ArrowDownCircle, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/app/calendario/dividas")({
+export const Route = createFileRoute("/_authenticated/app/dividas")({
   head: () => ({ meta: [{ title: "Gestão de Dívida — Azura Capital" }] }),
   component: Page,
 });

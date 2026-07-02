@@ -65,20 +65,27 @@ function Dashboard() {
   });
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Bom dia" : hour < 19 ? "Boa tarde" : "Boa noite";
-  const emoji = hour < 12 ? "☀️" : hour < 19 ? "👋" : "🌙";
+  const greeting =
+  hour >= 0 && hour < 12
+    ? "Bom dia"
+    : hour >= 12 && hour < 18
+      ? "Boa tarde"
+      : "Boa noite";
+  const emoji = "🤩";
   const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim();
   const today = new Intl.DateTimeFormat("pt-PT", { weekday: "long", day: "2-digit", month: "long" }).format(new Date());
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <p className="text-base sm:text-lg font-bold text-primary">
-          {greeting}{name ? ", " : ""}{name ? <span className="text-foreground">{name}</span> : ""} {emoji}
+        <p className="text-xl sm:text-2xl font-bold text-primary">
+          {greeting}{name ? ", " : ""}{name ? <span className="text-foreground font-extrabold">
+    {name}
+</span> : ""} {emoji}
         </p>
         <p className="text-sm text-muted-foreground capitalize mt-0.5">{today}</p>
         <h1 className="text-3xl font-bold mt-2">Património</h1>
-        <p className="text-sm text-muted-foreground">Visão consolidada — todos os valores são atualizados automaticamente pelos módulos</p>
+        <p className="text-sm text-muted-foreground">Visão Geral do seu Património</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -105,10 +112,15 @@ function Dashboard() {
                   >
                     {data!.pie.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
-                  <Tooltip formatter={(v: number, _n: string, p: any) => [`${formatKz(v)} · ${p.payload.pct.toFixed(1)}%`, p.payload.name]} />
+                  <Tooltip
+    formatter={(v: number, _n: string, p: any) => [
+        formatKz(v),
+        `${p.payload.name} (${p.payload.pct.toFixed(1)}%)`
+    ]}
+/>
                   <Legend
                     verticalAlign="bottom"
-                    formatter={(value: string, entry: any) => `${value} — ${formatKz(entry.payload.value)}`}
+                
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -133,10 +145,15 @@ function Dashboard() {
                   >
                     {data!.rdPie.map((s, i) => <Cell key={i} fill={s.color} />)}
                   </Pie>
-                  <Tooltip formatter={(v: number, _n: string, p: any) => [`${formatKz(v)} · ${p.payload.pct.toFixed(1)}%`, p.payload.name]} />
+                  <Tooltip
+    formatter={(v: number, _n: string, p: any) => [
+        formatKz(v),
+        `${p.payload.name} (${p.payload.pct.toFixed(1)}%)`
+    ]}
+/>
                   <Legend
                     verticalAlign="bottom"
-                    formatter={(value: string, entry: any) => `${value} — ${formatKz(entry.payload.value)}`}
+                  
                   />
                 </PieChart>
               </ResponsiveContainer>

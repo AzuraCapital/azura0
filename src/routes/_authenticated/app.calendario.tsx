@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatDate, formatKz } from "@/lib/format";
 import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, SelectWithCustom } from "@/components/ui-kit";
-import { Plus, Trash2, Calendar as CalIcon, CheckCircle2, Circle, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, Circle, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/calendario")({
@@ -39,6 +39,7 @@ function labelFor(category: string, custom?: string) {
 function Page() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const { data: events } = useQuery({
@@ -77,7 +78,20 @@ function Page() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <PageHeader title="Calendário Financeiro" subtitle="Eventos, dívidas e despesas recorrentes" action={<PrimaryButton onClick={() => setOpen(true)}><Plus className="h-4 w-4 inline mr-1" /> Novo Evento</PrimaryButton>} />
+      <PageHeader
+        title="Calendário Financeiro"
+        subtitle="Eventos, dívidas e despesas recorrentes"
+        action={
+          <div className="flex gap-2">
+            <GhostButton onClick={() => navigate({ to: "/app/calendario/dividas" })}>
+              Gestão de Dívida
+            </GhostButton>
+            <PrimaryButton onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4 inline mr-1" /> Novo Evento
+            </PrimaryButton>
+          </div>
+        }
+      />
 
       {noEvents ? (
         <div className="glass rounded-3xl p-12 text-center text-sm text-muted-foreground">Crie o primeiro evento para começar a organizar as suas datas financeiras.</div>

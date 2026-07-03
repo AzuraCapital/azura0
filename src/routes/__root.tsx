@@ -72,15 +72,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Azura Capital — Building the Future" },
-      { name: "description", content: "Plataforma de gestão patrimonial. Acompanhe os seus investimentos e finanças pessoais com clareza, controlo e confiança." },
-      { property: "og:title", content: "Azura Capital — Building the Future" },
-      { property: "og:description", content: "Plataforma de gestão patrimonial. Acompanhe os seus investimentos e finanças pessoais com clareza, controlo e confiança." },
+      { title: "Azura Capital" },
+      { name: "description", content: "Plataforma de gestão patrimonial. Acompanhe investimentos, contas bancárias e finanças pessoais com clareza, controlo e confiança." },
       { property: "og:type", content: "website" },
-      { name: "twitter:title", content: "Azura Capital — Building the Future" },
-      { name: "twitter:description", content: "Plataforma de gestão patrimonial. Acompanhe os seus investimentos e finanças pessoais com clareza, controlo e confiança." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a612ad59-cb13-4f56-ab2c-3780a596ae15/id-preview-339b55d6--ba15788b-aef6-4c13-9ec9-a0e6c70df8f8.lovable.app-1782815328546.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a612ad59-cb13-4f56-ab2c-3780a596ae15/id-preview-339b55d6--ba15788b-aef6-4c13-9ec9-a0e6c70df8f8.lovable.app-1782815328546.png" },
+      { property: "og:site_name", content: "Azura Capital" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
@@ -88,6 +83,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Azura Capital",
+          url: "https://azura0.lovable.app",
+          logo: "https://azura0.lovable.app/favicon.ico",
+        }),
+      },
     ],
   }),
   shellComponent: RootShell,

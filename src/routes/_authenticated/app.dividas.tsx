@@ -8,8 +8,22 @@ import { PageHeader, GhostButton } from "@/components/ui-kit";
 import { CheckCircle2, Circle, ArrowUpCircle, ArrowDownCircle, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
+const DIV_URL = "https://azura0.lovable.app/app/dividas";
+const DIV_TITLE = "Gestão de Dívida — Azura Capital";
+const DIV_DESC = "Acompanhe os seus créditos e dívidas, prazos, juros e amortizações num painel dedicado e sincronizado com as contas bancárias.";
+
 export const Route = createFileRoute("/_authenticated/app/dividas")({
-  head: () => ({ meta: [{ title: "Gestão de Dívida — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: DIV_TITLE },
+      { name: "description", content: DIV_DESC },
+      { property: "og:title", content: DIV_TITLE },
+      { property: "og:description", content: DIV_DESC },
+      { property: "og:url", content: DIV_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: DIV_URL }],
+  }),
   component: Page,
 });
 

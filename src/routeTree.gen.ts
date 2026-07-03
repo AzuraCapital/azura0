@@ -18,6 +18,7 @@ import { Route as AuthenticatedAppObjetivosRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppInvestimentosRouteImport } from './routes/_authenticated/app.investimentos'
 import { Route as AuthenticatedAppHistoricoRouteImport } from './routes/_authenticated/app.historico'
 import { Route as AuthenticatedAppFinancasRouteImport } from './routes/_authenticated/app.financas'
+import { Route as AuthenticatedAppDividasRouteImport } from './routes/_authenticated/app.dividas'
 import { Route as AuthenticatedAppDefinicoesRouteImport } from './routes/_authenticated/app.definicoes'
 import { Route as AuthenticatedAppCustodiaRouteImport } from './routes/_authenticated/app.custodia'
 import { Route as AuthenticatedAppCalendarioRouteImport } from './routes/_authenticated/app.calendario'
@@ -71,6 +72,11 @@ const AuthenticatedAppFinancasRoute =
     path: '/app/financas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppDividasRoute = AuthenticatedAppDividasRouteImport.update({
+  id: '/app/dividas',
+  path: '/app/dividas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAppDefinicoesRoute =
   AuthenticatedAppDefinicoesRouteImport.update({
     id: '/app/definicoes',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/app/calendario': typeof AuthenticatedAppCalendarioRoute
   '/app/custodia': typeof AuthenticatedAppCustodiaRoute
   '/app/definicoes': typeof AuthenticatedAppDefinicoesRoute
+  '/app/dividas': typeof AuthenticatedAppDividasRoute
   '/app/financas': typeof AuthenticatedAppFinancasRoute
   '/app/historico': typeof AuthenticatedAppHistoricoRoute
   '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/app/calendario': typeof AuthenticatedAppCalendarioRoute
   '/app/custodia': typeof AuthenticatedAppCustodiaRoute
   '/app/definicoes': typeof AuthenticatedAppDefinicoesRoute
+  '/app/dividas': typeof AuthenticatedAppDividasRoute
   '/app/financas': typeof AuthenticatedAppFinancasRoute
   '/app/historico': typeof AuthenticatedAppHistoricoRoute
   '/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/_authenticated/app/calendario': typeof AuthenticatedAppCalendarioRoute
   '/_authenticated/app/custodia': typeof AuthenticatedAppCustodiaRoute
   '/_authenticated/app/definicoes': typeof AuthenticatedAppDefinicoesRoute
+  '/_authenticated/app/dividas': typeof AuthenticatedAppDividasRoute
   '/_authenticated/app/financas': typeof AuthenticatedAppFinancasRoute
   '/_authenticated/app/historico': typeof AuthenticatedAppHistoricoRoute
   '/_authenticated/app/investimentos': typeof AuthenticatedAppInvestimentosRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/app/calendario'
     | '/app/custodia'
     | '/app/definicoes'
+    | '/app/dividas'
     | '/app/financas'
     | '/app/historico'
     | '/app/investimentos'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/app/calendario'
     | '/app/custodia'
     | '/app/definicoes'
+    | '/app/dividas'
     | '/app/financas'
     | '/app/historico'
     | '/app/investimentos'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/calendario'
     | '/_authenticated/app/custodia'
     | '/_authenticated/app/definicoes'
+    | '/_authenticated/app/dividas'
     | '/_authenticated/app/financas'
     | '/_authenticated/app/historico'
     | '/_authenticated/app/investimentos'
@@ -256,6 +268,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppFinancasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/dividas': {
+      id: '/_authenticated/app/dividas'
+      path: '/app/dividas'
+      fullPath: '/app/dividas'
+      preLoaderRoute: typeof AuthenticatedAppDividasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/definicoes': {
       id: '/_authenticated/app/definicoes'
       path: '/app/definicoes'
@@ -292,6 +311,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppCalendarioRoute: typeof AuthenticatedAppCalendarioRoute
   AuthenticatedAppCustodiaRoute: typeof AuthenticatedAppCustodiaRoute
   AuthenticatedAppDefinicoesRoute: typeof AuthenticatedAppDefinicoesRoute
+  AuthenticatedAppDividasRoute: typeof AuthenticatedAppDividasRoute
   AuthenticatedAppFinancasRoute: typeof AuthenticatedAppFinancasRoute
   AuthenticatedAppHistoricoRoute: typeof AuthenticatedAppHistoricoRoute
   AuthenticatedAppInvestimentosRoute: typeof AuthenticatedAppInvestimentosRoute
@@ -304,6 +324,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppCalendarioRoute: AuthenticatedAppCalendarioRoute,
   AuthenticatedAppCustodiaRoute: AuthenticatedAppCustodiaRoute,
   AuthenticatedAppDefinicoesRoute: AuthenticatedAppDefinicoesRoute,
+  AuthenticatedAppDividasRoute: AuthenticatedAppDividasRoute,
   AuthenticatedAppFinancasRoute: AuthenticatedAppFinancasRoute,
   AuthenticatedAppHistoricoRoute: AuthenticatedAppHistoricoRoute,
   AuthenticatedAppInvestimentosRoute: AuthenticatedAppInvestimentosRoute,

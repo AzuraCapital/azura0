@@ -8,8 +8,22 @@ import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, Select
 import { Plus, Trash2, TrendingUp, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
+const INV_URL = "https://azura0.lovable.app/app/investimentos";
+const INV_TITLE = "Investimentos — Azura Capital";
+const INV_DESC = "Gestão da sua carteira de investimentos: ações, ETFs, obrigações, fundos e depósitos, com compra, venda e histórico consolidado.";
+
 export const Route = createFileRoute("/_authenticated/app/investimentos")({
-  head: () => ({ meta: [{ title: "Investimentos — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: INV_TITLE },
+      { name: "description", content: INV_DESC },
+      { property: "og:title", content: INV_TITLE },
+      { property: "og:description", content: INV_DESC },
+      { property: "og:url", content: INV_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: INV_URL }],
+  }),
   component: Page,
 });
 
@@ -99,7 +113,7 @@ function Page() {
                   <span className={`inline-block text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${catColor(a.asset_categories?.id ?? "")}`}>{a.asset_categories?.name ?? "—"}</span>
                   <div className="font-semibold mt-2 truncate">{a.name}</div>
                 </div>
-                <button onClick={() => del(a.id)} className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => del(a.id)} aria-label="Eliminar ativo" className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
               </div>
               <div className="mt-4 pt-4 border-t border-border/50 space-y-1 text-sm">
                 {qty > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Quantidade</span><span className="font-medium">{fmtQty(qty)}</span></div>}
@@ -109,7 +123,7 @@ function Page() {
               </div>
               <div className="mt-4 flex gap-2">
                 <GhostButton className="flex-1" onClick={() => setOpAssetId(a.id)}>Nova operação</GhostButton>
-                <GhostButton onClick={() => setExpanded(isOpen ? null : a.id)}>{isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</GhostButton>
+                <GhostButton onClick={() => setExpanded(isOpen ? null : a.id)} aria-label={isOpen ? "Colapsar histórico" : "Expandir histórico"}>{isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</GhostButton>
               </div>
               {isOpen && <History assetId={a.id} currency={a.currency} />}
             </div>
@@ -236,34 +250,8 @@ function AssetModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                 new Date().toISOString().slice(0,10),
         });
 
-    /*
-     * Debitar automaticamente o banco
-     */
-
-    if (bankId){
-
-        const {data: bank} = await supabase
-            .from("bank_accounts")
-            .select("balance")
-            .eq("id",bankId)
-            .single();
-
-        if(bank){
-
-            await supabase
-                .from("bank_accounts")
-                .update({
-                    balance:Number(bank.balance)-total
-                })
-                .eq("id",bankId);
-
-        }
-
-    }
-
-    await qc.invalidateQueries({
-        queryKey:["bank_accounts"]
-    });
+    // saldo bancário é atualizado automaticamente pelo trigger em asset_transactions
+    await qc.invalidateQueries({ queryKey: ["bank_accounts"] });
 
 }
     setLoading(false);

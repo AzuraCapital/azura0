@@ -8,8 +8,22 @@ import { Moon, Sun, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+const DEF_URL = "https://azura0.lovable.app/app/definicoes";
+const DEF_TITLE = "Definições — Azura Capital";
+const DEF_DESC = "Configure a sua conta, preferências de perfil, moeda predefinida e opções da aplicação Azura Capital.";
+
 export const Route = createFileRoute("/_authenticated/app/definicoes")({
-  head: () => ({ meta: [{ title: "Definições — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: DEF_TITLE },
+      { name: "description", content: DEF_DESC },
+      { property: "og:title", content: DEF_TITLE },
+      { property: "og:description", content: DEF_DESC },
+      { property: "og:url", content: DEF_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: DEF_URL }],
+  }),
   component: Page,
 });
 

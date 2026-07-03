@@ -9,11 +9,27 @@ import { Loader2, Mail, Lock, User as UserIcon, Phone } from "lucide-react";
 
 type Mode = "signin" | "signup" | "forgot";
 
+const AUTH_URL = "https://azura0.lovable.app/auth";
+const AUTH_TITLE = "Entrar ou Criar Conta — Azura Capital";
+const AUTH_DESC = "Aceda à sua conta Azura Capital ou registe-se para começar a gerir os seus investimentos, contas bancárias e objetivos financeiros.";
+
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>) => ({
     mode: (s.mode === "signup" || s.mode === "forgot" ? s.mode : "signin") as Mode,
   }),
-  head: () => ({ meta: [{ title: "Entrar — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: AUTH_TITLE },
+      { name: "description", content: AUTH_DESC },
+      { property: "og:title", content: AUTH_TITLE },
+      { property: "og:description", content: AUTH_DESC },
+      { property: "og:url", content: AUTH_URL },
+      { name: "twitter:title", content: AUTH_TITLE },
+      { name: "twitter:description", content: AUTH_DESC },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: AUTH_URL }],
+  }),
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
@@ -119,7 +135,7 @@ function AuthPage() {
         <ThemeToggle />
       </header>
 
-      <div className="flex-1 flex items-center justify-center px-6 pb-12">
+      <main className="flex-1 flex items-center justify-center px-6 pb-12">
         <div className="glass rounded-3xl p-8 md:p-10 w-full max-w-md animate-fade-up">
           <h1 className="text-3xl font-bold mb-2">
             {mode === "signin" ? "Bem-vindo de volta" : mode === "signup" ? "Criar Conta" : "Recuperar Password"}
@@ -198,7 +214,7 @@ function AuthPage() {
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

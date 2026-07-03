@@ -8,8 +8,22 @@ import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, Select
 import { Plus, Trash2, CheckCircle2, Circle, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { toast } from "sonner";
 
+const CAL_URL = "https://azura0.lovable.app/app/calendario";
+const CAL_TITLE = "Calendário Financeiro — Azura Capital";
+const CAL_DESC = "Planeie eventos financeiros recorrentes com valor e banco associado; ao marcar efetuado o saldo é atualizado automaticamente.";
+
 export const Route = createFileRoute("/_authenticated/app/calendario")({
-  head: () => ({ meta: [{ title: "Calendário Financeiro — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: CAL_TITLE },
+      { name: "description", content: CAL_DESC },
+      { property: "og:title", content: CAL_TITLE },
+      { property: "og:description", content: CAL_DESC },
+      { property: "og:url", content: CAL_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: CAL_URL }],
+  }),
   component: Page,
 });
 

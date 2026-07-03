@@ -7,8 +7,22 @@ import { PageHeader, PrimaryButton, GhostButton, Modal, Field, SelectInput, Sele
 import { Plus, Trash2, Landmark, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
+const BANK_URL = "https://azura0.lovable.app/app/bancos";
+const BANK_TITLE = "Bancos — Azura Capital";
+const BANK_DESC = "Consolide as suas contas bancárias e acompanhe saldos atualizados automaticamente por receitas, despesas e operações de investimento.";
+
 export const Route = createFileRoute("/_authenticated/app/bancos")({
-  head: () => ({ meta: [{ title: "Bancos — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: BANK_TITLE },
+      { name: "description", content: BANK_DESC },
+      { property: "og:title", content: BANK_TITLE },
+      { property: "og:description", content: BANK_DESC },
+      { property: "og:url", content: BANK_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: BANK_URL }],
+  }),
   component: Page,
 });
 
@@ -91,7 +105,7 @@ function Page() {
                   <div className="text-xs uppercase tracking-wide text-primary font-medium truncate">{a.bank_name}</div>
                   <div className="text-xs text-muted-foreground mt-1">{ACCOUNT_TYPES.find(t => t.value === a.account_type)?.label ?? a.account_type}</div>
                 </div>
-                <button onClick={() => del(a.id)} className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => del(a.id)} aria-label="Eliminar conta" className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
               </div>
               <div className="mt-1 text-xs text-muted-foreground">Saldo Disponível</div>
               <div className={`mt-1 text-2xl font-bold ${neg ? "text-destructive" : ""}`}>{fmtMoney(Number(a.current_balance), a.currency)}</div>

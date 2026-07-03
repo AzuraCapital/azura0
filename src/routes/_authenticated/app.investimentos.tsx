@@ -8,8 +8,22 @@ import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, Select
 import { Plus, Trash2, TrendingUp, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
+const INV_URL = "https://azura0.lovable.app/app/investimentos";
+const INV_TITLE = "Investimentos — Azura Capital";
+const INV_DESC = "Gestão da sua carteira de investimentos: ações, ETFs, obrigações, fundos e depósitos, com compra, venda e histórico consolidado.";
+
 export const Route = createFileRoute("/_authenticated/app/investimentos")({
-  head: () => ({ meta: [{ title: "Investimentos — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: INV_TITLE },
+      { name: "description", content: INV_DESC },
+      { property: "og:title", content: INV_TITLE },
+      { property: "og:description", content: INV_DESC },
+      { property: "og:url", content: INV_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: INV_URL }],
+  }),
   component: Page,
 });
 

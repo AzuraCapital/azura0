@@ -110,7 +110,7 @@ function Dashboard() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="glass rounded-3xl p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2"><PieIcon className="h-4 w-4 text-primary" /> Carteira de Investimento</h3>
+          <h2 className="font-semibold mb-4 flex items-center gap-2"><PieIcon className="h-4 w-4 text-primary" /> Carteira de Investimento</h2>
           <div className="h-72">
             {(data?.pie ?? []).length ? (
               <ResponsiveContainer>
@@ -143,7 +143,7 @@ function Dashboard() {
         </div>
 
         <div className="glass rounded-3xl p-6">
-          <h3 className="font-semibold mb-4">Receitas vs Despesas (mês)</h3>
+          <h2 className="font-semibold mb-4">Receitas vs Despesas (mês)</h2>
           <div className="h-72">
             {(data?.rdPie ?? []).length ? (
               <ResponsiveContainer>
@@ -177,7 +177,7 @@ function Dashboard() {
       </div>
 
       <div className="glass rounded-3xl p-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> Metas prioritárias</h3>
+        <h2 className="font-semibold mb-4 flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> Metas prioritárias</h2>
         {(data?.goals ?? []).length === 0 ? (
           <Empty msg="Sem metas definidas. Adicione objetivos na secção Objetivos." />
         ) : (

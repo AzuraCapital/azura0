@@ -3,13 +3,32 @@ import { TrendingUp, Wallet, Target, BarChart3, Calendar, Bell, ShieldCheck, Pie
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
+const HOME_URL = "https://azura0.lovable.app/";
+const HOME_TITLE = "Azura Capital — Gestão Patrimonial";
+const HOME_DESC = "Azura Capital: plataforma de gestão patrimonial para investidores. Consolide investimentos, contas bancárias, objetivos e finanças pessoais num único lugar.";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Azura Capital — Building the Future" },
-      { name: "description", content: "Plataforma de gestão patrimonial. Acompanhe os seus investimentos e finanças pessoais num único lugar." },
-      { property: "og:title", content: "Azura Capital" },
-      { property: "og:description", content: "Plataforma de gestão patrimonial." },
+      { title: HOME_TITLE },
+      { name: "description", content: HOME_DESC },
+      { property: "og:title", content: HOME_TITLE },
+      { property: "og:description", content: HOME_DESC },
+      { property: "og:url", content: HOME_URL },
+      { name: "twitter:title", content: HOME_TITLE },
+      { name: "twitter:description", content: HOME_DESC },
+    ],
+    links: [{ rel: "canonical", href: HOME_URL }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Azura Capital",
+          url: HOME_URL,
+        }),
+      },
     ],
   }),
   component: Landing,
@@ -38,6 +57,7 @@ function Landing() {
         </div>
       </header>
 
+      <main>
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-6 pt-12 pb-20 text-center">
         <div className="animate-fade-up inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs font-medium text-primary mb-8">
@@ -105,6 +125,7 @@ function Landing() {
           </Link>
         </div>
       </section>
+      </main>
 
       <footer className="border-t border-border/50 py-8">
         <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">

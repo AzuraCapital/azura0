@@ -113,7 +113,7 @@ function Page() {
                   <span className={`inline-block text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${catColor(a.asset_categories?.id ?? "")}`}>{a.asset_categories?.name ?? "—"}</span>
                   <div className="font-semibold mt-2 truncate">{a.name}</div>
                 </div>
-                <button onClick={() => del(a.id)} className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => del(a.id)} aria-label="Eliminar ativo" className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
               </div>
               <div className="mt-4 pt-4 border-t border-border/50 space-y-1 text-sm">
                 {qty > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Quantidade</span><span className="font-medium">{fmtQty(qty)}</span></div>}
@@ -123,7 +123,7 @@ function Page() {
               </div>
               <div className="mt-4 flex gap-2">
                 <GhostButton className="flex-1" onClick={() => setOpAssetId(a.id)}>Nova operação</GhostButton>
-                <GhostButton onClick={() => setExpanded(isOpen ? null : a.id)}>{isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</GhostButton>
+                <GhostButton onClick={() => setExpanded(isOpen ? null : a.id)} aria-label={isOpen ? "Colapsar histórico" : "Expandir histórico"}>{isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</GhostButton>
               </div>
               {isOpen && <History assetId={a.id} currency={a.currency} />}
             </div>

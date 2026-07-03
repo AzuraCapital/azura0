@@ -91,7 +91,7 @@ function Page() {
                   <div className="text-xs uppercase tracking-wide text-primary font-medium truncate">{a.bank_name}</div>
                   <div className="text-xs text-muted-foreground mt-1">{ACCOUNT_TYPES.find(t => t.value === a.account_type)?.label ?? a.account_type}</div>
                 </div>
-                <button onClick={() => del(a.id)} className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => del(a.id)} aria-label="Eliminar conta" className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
               </div>
               <div className="mt-1 text-xs text-muted-foreground">Saldo Disponível</div>
               <div className={`mt-1 text-2xl font-bold ${neg ? "text-destructive" : ""}`}>{fmtMoney(Number(a.current_balance), a.currency)}</div>

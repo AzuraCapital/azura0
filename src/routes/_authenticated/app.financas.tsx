@@ -148,7 +148,7 @@ function Page() {
                   <div className={`font-semibold text-right shrink-0 ${t.type === "receita" ? "text-success" : "text-destructive"}`}>
                     {t.type === "receita" ? "+" : "-"}{formatKz(t.amount)}
                   </div>
-                  <button onClick={() => del(t.id)} className="text-muted-foreground hover:text-destructive p-1 shrink-0"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => del(t.id)} aria-label="Eliminar transação" className="text-muted-foreground hover:text-destructive p-1 shrink-0"><Trash2 className="h-4 w-4" /></button>
                 </div>
               );
             })}

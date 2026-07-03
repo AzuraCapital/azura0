@@ -236,34 +236,8 @@ function AssetModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                 new Date().toISOString().slice(0,10),
         });
 
-    /*
-     * Debitar automaticamente o banco
-     */
-
-    if (bankId){
-
-        const {data: bank} = await supabase
-            .from("bank_accounts")
-            .select("balance")
-            .eq("id",bankId)
-            .single();
-
-        if(bank){
-
-            await supabase
-                .from("bank_accounts")
-                .update({
-                    balance:Number(bank.balance)-total
-                })
-                .eq("id",bankId);
-
-        }
-
-    }
-
-    await qc.invalidateQueries({
-        queryKey:["bank_accounts"]
-    });
+    // saldo bancário é atualizado automaticamente pelo trigger em asset_transactions
+    await qc.invalidateQueries({ queryKey: ["bank_accounts"] });
 
 }
     setLoading(false);

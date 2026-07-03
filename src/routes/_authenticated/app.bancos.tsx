@@ -3,8 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { PageHeader, PrimaryButton, GhostButton, Modal, Field, SelectInput, SelectWithCustom } from "@/components/ui-kit";
-import { Plus, Trash2, Landmark, AlertTriangle } from "lucide-react";
+import { formatDate } from "@/lib/format";
+import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, SelectWithCustom } from "@/components/ui-kit";
+import { Plus, Trash2, Landmark, AlertTriangle, SlidersHorizontal, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const BANK_URL = "https://azura0.lovable.app/app/bancos";
@@ -41,11 +42,17 @@ const fmtMoney = (v: number, currency = "AOA") => {
   catch { return `${v.toLocaleString("pt-PT", { maximumFractionDigits: 2 })} ${currency}`; }
 };
 
+const parseNum = (s: string) => {
+  const n = Number(String(s ?? "").replace(/\s/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+};
+
 function Page() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<string>("todos");
+  const [adjustBank, setAdjustBank] = useState<any | null>(null);
 
   const { data: accounts } = useQuery({
     queryKey: ["bank_accounts", user?.id],
@@ -105,7 +112,10 @@ function Page() {
                   <div className="text-xs uppercase tracking-wide text-primary font-medium truncate">{a.bank_name}</div>
                   <div className="text-xs text-muted-foreground mt-1">{ACCOUNT_TYPES.find(t => t.value === a.account_type)?.label ?? a.account_type}</div>
                 </div>
-                <button onClick={() => del(a.id)} aria-label="Eliminar conta" className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => setAdjustBank(a)} aria-label="Ajustar saldo" title="Ajustar saldo" className="text-muted-foreground hover:text-primary"><SlidersHorizontal className="h-4 w-4" /></button>
+                  <button onClick={() => del(a.id)} aria-label="Eliminar conta" className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                </div>
               </div>
               <div className="mt-1 text-xs text-muted-foreground">Saldo Disponível</div>
               <div className={`mt-1 text-2xl font-bold ${neg ? "text-destructive" : ""}`}>{fmtMoney(Number(a.current_balance), a.currency)}</div>
@@ -116,6 +126,7 @@ function Page() {
       </div>
 
       <AccountModal open={open} onClose={() => { setOpen(false); qc.invalidateQueries({ queryKey: ["bank_accounts"] }); }} />
+      <BalanceAdjustmentModal bank={adjustBank} onClose={() => { setAdjustBank(null); qc.invalidateQueries({ queryKey: ["bank_accounts"] }); }} />
     </div>
   );
 }
@@ -164,6 +175,113 @@ function AccountModal({ open, onClose }: { open: boolean; onClose: () => void })
           <GhostButton onClick={onClose}>Cancelar</GhostButton>
           <PrimaryButton onClick={save} disabled={loading}>Guardar</PrimaryButton>
         </div>
+      </div>
+    </Modal>
+  );
+}
+
+function BalanceAdjustmentModal({ bank, onClose }: { bank: any | null; onClose: () => void }) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [direction, setDirection] = useState<"credito" | "debito">("credito");
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { data: adjustments } = useQuery({
+    queryKey: ["bank_balance_adjustments", bank?.id],
+    enabled: !!bank,
+    queryFn: async () =>
+      (await supabase
+        .from("bank_balance_adjustments")
+        .select("*")
+        .eq("bank_account_id", bank.id)
+        .order("created_at", { ascending: false })
+      ).data ?? [],
+  });
+
+  if (!bank) return null;
+
+  const submit = async () => {
+    const amt = parseNum(amount);
+    if (amt <= 0) { toast.error("Valor obrigatório"); return; }
+    if (!reason.trim()) { toast.error("Indique o motivo do ajuste"); return; }
+
+    setLoading(true);
+    const { error } = await supabase.from("bank_balance_adjustments").insert({
+      user_id: user!.id,
+      bank_account_id: bank.id,
+      amount: direction === "credito" ? amt : -amt,
+      reason: reason.trim(),
+    } as never);
+    setLoading(false);
+
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Saldo ajustado");
+      setAmount("");
+      setReason("");
+      qc.invalidateQueries({ queryKey: ["bank_accounts"] });
+      qc.invalidateQueries({ queryKey: ["bank_balance_adjustments", bank.id] });
+    }
+  };
+
+  const undo = async (id: string) => {
+    const { error } = await supabase.from("bank_balance_adjustments").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else toast.success("Ajuste revertido");
+    qc.invalidateQueries({ queryKey: ["bank_accounts"] });
+    qc.invalidateQueries({ queryKey: ["bank_balance_adjustments", bank.id] });
+  };
+
+  return (
+    <Modal open={!!bank} onClose={onClose} title={`Ajustar Saldo — ${bank.bank_name}`}>
+      <div className="space-y-4">
+        <div className="glass rounded-xl p-3 text-sm flex justify-between">
+          <span className="text-muted-foreground">Saldo atual</span>
+          <span className="font-semibold">{fmtMoney(Number(bank.current_balance ?? 0), bank.currency)}</span>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Use isto apenas para corrigir divergências (ex.: erro de digitação, saldo inicial mal definido, dados de teste). O ajuste fica registado no histórico com o motivo indicado.
+        </p>
+
+        <div className="space-y-3">
+          <Field label="Tipo de ajuste">
+            <SelectInput value={direction} onChange={e => setDirection(e.target.value as any)}>
+              <option value="credito">Aumentar saldo (crédito)</option>
+              <option value="debito">Reduzir saldo (débito)</option>
+            </SelectInput>
+          </Field>
+          <Field label={`Valor (${bank.currency})`}>
+            <TextInput inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="ex.: 5000" />
+          </Field>
+          <Field label="Motivo (obrigatório)">
+            <TextInput value={reason} onChange={e => setReason(e.target.value)} placeholder="ex.: Correção de teste de dívida" />
+          </Field>
+          <div className="flex justify-end">
+            <PrimaryButton onClick={submit} disabled={loading}>Registar Ajuste</PrimaryButton>
+          </div>
+        </div>
+
+        {(adjustments ?? []).length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Histórico de Ajustes</h3>
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {(adjustments ?? []).map((a: any) => (
+                <div key={a.id} className="flex items-center gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
+                  <span className={a.amount > 0 ? "text-success" : "text-destructive"}>
+                    {a.amount > 0 ? "+" : ""}{fmtMoney(Number(a.amount), bank.currency)}
+                  </span>
+                  <span className="text-xs text-muted-foreground flex-1 truncate">{a.reason} · {formatDate(a.created_at)}</span>
+                  <button onClick={() => undo(a.id)} className="text-muted-foreground hover:text-destructive shrink-0" title="Reverter">
+                    <XIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );

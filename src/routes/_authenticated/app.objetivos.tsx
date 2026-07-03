@@ -57,10 +57,73 @@ function Page() {
   const [open, setOpen] = useState(false);
 
   const { data: goals } = useQuery({
-    queryKey: ["goals", user?.id],
-    enabled: !!user,
-    queryFn: async () => (await supabase.from("goals").select("*").order("is_primary", { ascending: false })).data ?? [],
-  });
+  queryKey: ["goals", user?.id],
+  enabled: !!user,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("goals")
+      .select("*")
+      .order("is_primary", { ascending: false });
+
+    if (error) throw error;
+
+    return (data ?? []).map(goal => {
+
+      const current = Number(goal.current_amount ?? 0);
+      const target = Number(goal.target_amount ?? 0);
+
+      const remaining = Math.max(0, target - current);
+
+      const progress =
+        target > 0
+          ? Math.min((current / target) * 100, 100)
+          : 0;
+
+      let monthlyRequired = 0;
+      let monthsRemaining = 0;
+
+      if (goal.target_date) {
+
+        const today = new Date();
+
+        const targetDate = new Date(goal.target_date);
+
+        monthsRemaining =
+          Math.max(
+            1,
+            (targetDate.getFullYear() - today.getFullYear()) * 12 +
+            targetDate.getMonth() -
+            today.getMonth()
+          );
+
+        monthlyRequired =
+          remaining / monthsRemaining;
+      }
+
+      return {
+
+        ...goal,
+
+        current,
+
+        target,
+
+        remaining,
+
+        progress,
+
+        monthlyRequired,
+
+        monthsRemaining,
+
+        completed: current >= target
+
+      };
+
+    });
+
+  },
+});
 
   const del = async (id: string) => {
     await supabase.from("goals").delete().eq("id", id);

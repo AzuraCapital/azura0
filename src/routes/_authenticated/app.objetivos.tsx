@@ -8,8 +8,22 @@ import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, Select
 import { Plus, Trash2, Target, Star } from "lucide-react";
 import { toast } from "sonner";
 
+const OBJ_URL = "https://azura0.lovable.app/app/objetivos";
+const OBJ_TITLE = "Objetivos — Azura Capital";
+const OBJ_DESC = "Defina metas financeiras, acompanhe a progressão e descubra quanto precisa de poupar por mês para as atingir a tempo.";
+
 export const Route = createFileRoute("/_authenticated/app/objetivos")({
-  head: () => ({ meta: [{ title: "Objetivos — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: OBJ_TITLE },
+      { name: "description", content: OBJ_DESC },
+      { property: "og:title", content: OBJ_TITLE },
+      { property: "og:description", content: OBJ_DESC },
+      { property: "og:url", content: OBJ_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: OBJ_URL }],
+  }),
   component: Page,
 });
 

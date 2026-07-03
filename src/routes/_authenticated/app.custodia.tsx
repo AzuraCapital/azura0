@@ -7,8 +7,22 @@ import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, Select
 import { Plus, Trash2, Vault } from "lucide-react";
 import { toast } from "sonner";
 
+const CUS_URL = "https://azura0.lovable.app/app/custodia";
+const CUS_TITLE = "Conta Custódia — Azura Capital";
+const CUS_DESC = "Gestão de contas custódia associadas a bancos, usadas para movimentar automaticamente saldos em compras e vendas de investimentos.";
+
 export const Route = createFileRoute("/_authenticated/app/custodia")({
-  head: () => ({ meta: [{ title: "Conta Custódia — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: CUS_TITLE },
+      { name: "description", content: CUS_DESC },
+      { property: "og:title", content: CUS_TITLE },
+      { property: "og:description", content: CUS_DESC },
+      { property: "og:url", content: CUS_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: CUS_URL }],
+  }),
   component: Page,
 });
 

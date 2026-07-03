@@ -7,8 +7,22 @@ import { PageHeader, PrimaryButton, GhostButton, Modal, Field, SelectInput, Sele
 import { Plus, Trash2, Landmark, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
+const BANK_URL = "https://azura0.lovable.app/app/bancos";
+const BANK_TITLE = "Bancos — Azura Capital";
+const BANK_DESC = "Consolide as suas contas bancárias e acompanhe saldos atualizados automaticamente por receitas, despesas e operações de investimento.";
+
 export const Route = createFileRoute("/_authenticated/app/bancos")({
-  head: () => ({ meta: [{ title: "Bancos — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: BANK_TITLE },
+      { name: "description", content: BANK_DESC },
+      { property: "og:title", content: BANK_TITLE },
+      { property: "og:description", content: BANK_DESC },
+      { property: "og:url", content: BANK_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: BANK_URL }],
+  }),
   component: Page,
 });
 

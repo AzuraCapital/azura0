@@ -9,8 +9,22 @@ import { Plus, Trash2, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 
+const FIN_URL = "https://azura0.lovable.app/app/financas";
+const FIN_TITLE = "Finanças Pessoais — Azura Capital";
+const FIN_DESC = "Controle as suas receitas e despesas por categoria e banco, com filtros mensais e anuais e sincronização automática do saldo bancário.";
+
 export const Route = createFileRoute("/_authenticated/app/financas")({
-  head: () => ({ meta: [{ title: "Finanças — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: FIN_TITLE },
+      { name: "description", content: FIN_DESC },
+      { property: "og:title", content: FIN_TITLE },
+      { property: "og:description", content: FIN_DESC },
+      { property: "og:url", content: FIN_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: FIN_URL }],
+  }),
   component: Page,
 });
 

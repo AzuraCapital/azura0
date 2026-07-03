@@ -8,8 +8,22 @@ import { PageHeader } from "@/components/ui-kit";
 import { ArrowDownCircle, ArrowUpCircle, CalendarClock, TrendingUp, TrendingDown } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, addMonths, addYears } from "date-fns";
 
+const HIST_URL = "https://azura0.lovable.app/app/historico";
+const HIST_TITLE = "Histórico Financeiro — Azura Capital";
+const HIST_DESC = "Timeline consolidada de todas as suas operações — receitas, despesas, compras, vendas e eventos efetuados — com filtros mensais e anuais.";
+
 export const Route = createFileRoute("/_authenticated/app/historico")({
-  head: () => ({ meta: [{ title: "Histórico Financeiro — Azura Capital" }] }),
+  head: () => ({
+    meta: [
+      { title: HIST_TITLE },
+      { name: "description", content: HIST_DESC },
+      { property: "og:title", content: HIST_TITLE },
+      { property: "og:description", content: HIST_DESC },
+      { property: "og:url", content: HIST_URL },
+      { name: "robots", content: "noindex,follow" },
+    ],
+    links: [{ rel: "canonical", href: HIST_URL }],
+  }),
   component: Page,
 });
 

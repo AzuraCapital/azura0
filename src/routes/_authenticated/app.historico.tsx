@@ -114,7 +114,54 @@ function Page() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <PageHeader title="Histórico Financeiro" subtitle="Todos os movimentos: receitas, despesas, compras, vendas e eventos" />
+  const handleExport = async (fmt: "pdf" | "excel", range: { from: string | null; to: string | null }) => {
+    let q1 = supabase.from("transactions").select("*, income_categories(name), expense_categories(name), bank_accounts(bank_name)");
+    let q2 = supabase.from("asset_transactions").select("*, assets(name), bank_accounts(bank_name)");
+    let q3 = supabase.from("calendar_events").select("*, bank_accounts(bank_name)").eq("status", "efetuado");
+    if (range.from) { q1 = q1.gte("transaction_date", range.from); q2 = q2.gte("transaction_date", range.from); q3 = q3.gte("event_date", range.from); }
+    if (range.to) { q1 = q1.lte("transaction_date", range.to); q2 = q2.lte("transaction_date", range.to); q3 = q3.lte("event_date", range.to); }
+    const [t, a, e] = await Promise.all([q1, q2, q3]);
+    const list: Row[] = [];
+    (t.data ?? []).forEach((x: any) => {
+      const cat = x.type === "receita" ? x.income_categories?.name : x.expense_categories?.name;
+      list.push({ id: "t_" + x.id, date: x.transaction_date, kind: x.type, label: x.description || cat || (x.type === "receita" ? "Receita" : "Despesa"), detail: [cat, x.bank_accounts?.bank_name].filter(Boolean).join(" · "), amount: Number(x.amount), positive: x.type === "receita" });
+    });
+    (a.data ?? []).forEach((x: any) => {
+      list.push({ id: "a_" + x.id, date: x.transaction_date, kind: x.type, label: (x.type === "compra" ? "Compra" : "Venda") + " · " + (x.assets?.name ?? "Ativo"), detail: x.bank_accounts?.bank_name ?? "Sem banco", amount: Number(x.amount), positive: x.type === "venda" });
+    });
+    (e.data ?? []).forEach((x: any) => {
+      list.push({ id: "e_" + x.id, date: x.event_date, kind: x.direction === "receita" ? "calendario_receita" : "calendario_despesa", label: x.title || "Evento", detail: ["Calendário", x.bank_accounts?.bank_name].filter(Boolean).join(" · "), amount: Number(x.amount ?? 0), positive: x.direction === "receita" });
+    });
+    list.sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
+    const rec = list.filter(r => r.positive).reduce((s, r) => s + r.amount, 0);
+    const desp = list.filter(r => !r.positive).reduce((s, r) => s + r.amount, 0);
+    const period = range.from || range.to ? `${range.from ?? "início"} até ${range.to ?? "hoje"}` : "Todos os movimentos";
+    const columns = [
+      { header: "Data", key: (r: Row) => formatDate(r.date) },
+      { header: "Tipo", key: (r: Row) => ({ receita: "Receita", despesa: "Despesa", compra: "Compra", venda: "Venda", calendario_receita: "Calendário (Receita)", calendario_despesa: "Calendário (Despesa)" }[r.kind]) },
+      { header: "Descrição", key: (r: Row) => r.label },
+      { header: "Detalhe", key: (r: Row) => r.detail },
+      { header: "Valor (AOA)", key: (r: Row) => (r.positive ? "+" : "-") + formatKz(r.amount), align: "right" as const },
+    ];
+    const meta = {
+      title: "Histórico Financeiro",
+      subtitle: "Azura Capital — Extrato completo de movimentos",
+      period,
+      filename: `historico_financeiro_${format(new Date(), "yyyyMMdd_HHmm")}`,
+      summary: [
+        { label: "Total de Movimentos", value: String(list.length) },
+        { label: "Total Receitas", value: formatKz(rec) },
+        { label: "Total Despesas", value: formatKz(desp) },
+        { label: "Saldo Líquido", value: formatKz(rec - desp) },
+      ],
+    };
+    if (fmt === "excel") exportToExcel(list, columns, meta);
+    else exportToPdf(list, columns, meta);
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-6">
+      <PageHeader title="Histórico Financeiro" subtitle="Todos os movimentos: receitas, despesas, compras, vendas e eventos" action={<ExportButton onExport={handleExport} />} />
 
       <div className="flex flex-wrap gap-2">
         {(["mensal", "anual"] as const).map(p => (

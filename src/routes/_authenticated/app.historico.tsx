@@ -112,8 +112,6 @@ function Page() {
     ? new Intl.DateTimeFormat("pt-PT", { month: "long", year: "numeric" }).format(refDate)
     : new Intl.DateTimeFormat("pt-PT", { year: "numeric" }).format(refDate);
 
-  return (
-    <div className="max-w-5xl mx-auto space-y-6">
   const handleExport = async (fmt: "pdf" | "excel", range: { from: string | null; to: string | null }) => {
     let q1 = supabase.from("transactions").select("*, income_categories(name), expense_categories(name), bank_accounts(bank_name)");
     let q2 = supabase.from("asset_transactions").select("*, assets(name), bank_accounts(bank_name)");

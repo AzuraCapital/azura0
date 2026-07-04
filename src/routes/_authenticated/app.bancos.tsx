@@ -132,6 +132,7 @@ function Page() {
 
       <AccountModal open={open} onClose={() => { setOpen(false); qc.invalidateQueries({ queryKey: ["bank_accounts"] }); }} />
       <BalanceAdjustmentModal bank={adjustBank} onClose={() => { setAdjustBank(null); qc.invalidateQueries({ queryKey: ["bank_accounts"] }); }} />
+      <BankStatementModal bank={statementBank} onClose={() => setStatementBank(null)} />
     </div>
   );
 }

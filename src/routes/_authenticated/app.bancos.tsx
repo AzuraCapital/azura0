@@ -55,6 +55,7 @@ function Page() {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<string>("todos");
   const [adjustBank, setAdjustBank] = useState<any | null>(null);
+  const [statementBank, setStatementBank] = useState<any | null>(null);
 
   const { data: accounts } = useQuery({
     queryKey: ["bank_accounts", user?.id],

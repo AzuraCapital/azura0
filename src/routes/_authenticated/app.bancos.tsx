@@ -116,6 +116,7 @@ function Page() {
                   <div className="text-xs text-muted-foreground mt-1">{ACCOUNT_TYPES.find(t => t.value === a.account_type)?.label ?? a.account_type}</div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => setStatementBank(a)} aria-label="Ver extrato" title="Ver extrato" className="text-muted-foreground hover:text-primary"><Receipt className="h-4 w-4" /></button>
                   <button onClick={() => setAdjustBank(a)} aria-label="Ajustar saldo" title="Ajustar saldo" className="text-muted-foreground hover:text-primary"><SlidersHorizontal className="h-4 w-4" /></button>
                   <button onClick={() => del(a.id)} aria-label="Eliminar conta" className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                 </div>
@@ -123,6 +124,7 @@ function Page() {
               <div className="mt-1 text-xs text-muted-foreground">Saldo Disponível</div>
               <div className={`mt-1 text-2xl font-bold ${neg ? "text-destructive" : ""}`}>{fmtMoney(Number(a.current_balance), a.currency)}</div>
               {neg && <div className="mt-2 text-xs text-destructive flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Saldo negativo</div>}
+              <button onClick={() => setStatementBank(a)} className="mt-3 w-full rounded-full px-3 py-1.5 text-xs font-medium bg-secondary hover:bg-secondary/70 inline-flex items-center justify-center gap-1.5"><Receipt className="h-3.5 w-3.5" /> Ver Extrato</button>
             </div>
           );
         })}

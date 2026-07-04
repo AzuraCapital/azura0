@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatKz, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/ui-kit";
+import { ExportButton } from "@/components/ExportButton";
+import { exportToExcel, exportToPdf } from "@/lib/export";
 import { ArrowDownCircle, ArrowUpCircle, CalendarClock, TrendingUp, TrendingDown } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, addMonths, addYears } from "date-fns";
 

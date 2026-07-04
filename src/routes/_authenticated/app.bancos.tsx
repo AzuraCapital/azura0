@@ -292,3 +292,127 @@ function BalanceAdjustmentModal({ bank, onClose }: { bank: any | null; onClose: 
     </Modal>
   );
 }
+
+type StatementRow = {
+  id: string;
+  date: string;
+  type: string;
+  description: string;
+  amount: number;
+  positive: boolean;
+};
+
+function BankStatementModal({ bank, onClose }: { bank: any | null; onClose: () => void }) {
+  const { user } = useAuth();
+
+  const { data: movements } = useQuery({
+    queryKey: ["bank_statement", bank?.id],
+    enabled: !!bank && !!user,
+    queryFn: async (): Promise<StatementRow[]> => {
+      const [tx, atx, ev, adj] = await Promise.all([
+        supabase.from("transactions").select("id, transaction_date, type, amount, description, income_categories(name), expense_categories(name)").eq("bank_account_id", bank.id),
+        supabase.from("asset_transactions").select("id, transaction_date, type, amount, assets(name)").eq("bank_account_id", bank.id),
+        supabase.from("calendar_events").select("id, event_date, direction, amount, title").eq("bank_account_id", bank.id).eq("status", "efetuado"),
+        supabase.from("bank_balance_adjustments").select("id, created_at, amount, reason").eq("bank_account_id", bank.id),
+      ]);
+      const rows: StatementRow[] = [];
+      (tx.data ?? []).forEach((t: any) => {
+        const cat = t.type === "receita" ? t.income_categories?.name : t.expense_categories?.name;
+        rows.push({ id: "t_" + t.id, date: t.transaction_date, type: t.type === "receita" ? "Receita" : "Despesa", description: t.description || cat || "-", amount: Number(t.amount), positive: t.type === "receita" });
+      });
+      (atx.data ?? []).forEach((a: any) => {
+        rows.push({ id: "a_" + a.id, date: a.transaction_date, type: a.type === "compra" ? "Compra de Ativo" : "Venda de Ativo", description: a.assets?.name ?? "Ativo", amount: Number(a.amount), positive: a.type === "venda" });
+      });
+      (ev.data ?? []).forEach((e: any) => {
+        rows.push({ id: "e_" + e.id, date: e.event_date, type: "Calendário", description: e.title || "Evento", amount: Number(e.amount ?? 0), positive: e.direction === "receita" });
+      });
+      (adj.data ?? []).forEach((x: any) => {
+        rows.push({ id: "j_" + x.id, date: (x.created_at ?? "").slice(0, 10), type: "Ajuste manual", description: x.reason ?? "-", amount: Math.abs(Number(x.amount)), positive: Number(x.amount) > 0 });
+      });
+      return rows.sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
+    },
+  });
+
+  if (!bank) return null;
+
+  const rows = movements ?? [];
+  const totalIn = rows.filter(r => r.positive).reduce((s, r) => s + r.amount, 0);
+  const totalOut = rows.filter(r => !r.positive).reduce((s, r) => s + r.amount, 0);
+
+  const handleExport = (fmt: "pdf" | "excel", range: { from: string | null; to: string | null }) => {
+    const filtered = rows.filter(r => {
+      if (range.from && r.date < range.from) return false;
+      if (range.to && r.date > range.to) return false;
+      return true;
+    });
+    const fIn = filtered.filter(r => r.positive).reduce((s, r) => s + r.amount, 0);
+    const fOut = filtered.filter(r => !r.positive).reduce((s, r) => s + r.amount, 0);
+    const columns = [
+      { header: "Data", key: (r: StatementRow) => formatDate(r.date) },
+      { header: "Tipo", key: (r: StatementRow) => r.type },
+      { header: "Descrição", key: (r: StatementRow) => r.description },
+      { header: `Valor (${bank.currency})`, key: (r: StatementRow) => (r.positive ? "+" : "-") + fmtMoney(r.amount, bank.currency), align: "right" as const },
+    ];
+    const period = range.from || range.to ? `${range.from ?? "início"} até ${range.to ?? "hoje"}` : "Todos os movimentos";
+    const meta = {
+      title: `Extrato Bancário — ${bank.bank_name}`,
+      subtitle: `Azura Capital · ${ACCOUNT_TYPES.find(t => t.value === bank.account_type)?.label ?? bank.account_type} · ${bank.currency}`,
+      period,
+      filename: `extrato_${bank.bank_name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}`,
+      summary: [
+        { label: "Saldo Atual", value: fmtMoney(Number(bank.current_balance), bank.currency) },
+        { label: "Movimentos", value: String(filtered.length) },
+        { label: "Total Entradas", value: fmtMoney(fIn, bank.currency) },
+        { label: "Total Saídas", value: fmtMoney(fOut, bank.currency) },
+        { label: "Fluxo Líquido", value: fmtMoney(fIn - fOut, bank.currency) },
+      ],
+    };
+    if (fmt === "excel") exportToExcel(filtered, columns, meta);
+    else exportToPdf(filtered, columns, meta);
+  };
+
+  return (
+    <Modal open={!!bank} onClose={onClose} title={`Extrato — ${bank.bank_name}`}>
+      <div className="space-y-4">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="glass rounded-xl p-3">
+            <div className="text-[10px] uppercase text-muted-foreground">Saldo</div>
+            <div className={`text-sm font-bold ${Number(bank.current_balance) < 0 ? "text-destructive" : ""}`}>{fmtMoney(Number(bank.current_balance), bank.currency)}</div>
+          </div>
+          <div className="glass rounded-xl p-3">
+            <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3 text-success" />Entradas</div>
+            <div className="text-sm font-bold text-success">{fmtMoney(totalIn, bank.currency)}</div>
+          </div>
+          <div className="glass rounded-xl p-3">
+            <div className="text-[10px] uppercase text-muted-foreground flex items-center gap-1"><TrendingDown className="h-3 w-3 text-destructive" />Saídas</div>
+            <div className="text-sm font-bold text-destructive">{fmtMoney(totalOut, bank.currency)}</div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-muted-foreground">{rows.length} movimento(s)</div>
+          <ExportButton onExport={handleExport} label="Exportar Extrato" />
+        </div>
+
+        <div className="max-h-[420px] overflow-y-auto rounded-2xl border border-border/50 divide-y divide-border/50">
+          {rows.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Sem movimentos nesta conta.</div>
+          ) : rows.map(r => (
+            <div key={r.id} className="flex items-center gap-3 p-3">
+              <div className={`rounded-full p-2 shrink-0 ${r.positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+                {r.positive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">{r.description}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{r.type} · {formatDate(r.date)}</div>
+              </div>
+              <div className={`text-sm font-semibold text-right shrink-0 ${r.positive ? "text-success" : "text-destructive"}`}>
+                {r.positive ? "+" : "-"}{fmtMoney(r.amount, bank.currency)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  );
+}

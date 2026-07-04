@@ -191,6 +191,41 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_balance_adjustments: {
+        Row: {
+          amount: number
+          bank_account_id: string
+          created_at: string
+          id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id: string
+          created_at?: string
+          id?: string
+          reason: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_balance_adjustments_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_transactions: {
         Row: {
           amount: number
@@ -238,6 +273,54 @@ export type Database = {
           },
         ]
       }
+      calendar_event_payments: {
+        Row: {
+          amount: number
+          bank_account_id: string
+          created_at: string
+          event_id: string
+          id: string
+          movement_type: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          movement_type: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          movement_type?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_payments_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           amount: number | null
@@ -250,6 +333,7 @@ export type Database = {
           expected_amount: number | null
           id: string
           recurrence: string | null
+          remaining_amount: number | null
           status: string
           title: string
           updated_at: string
@@ -266,6 +350,7 @@ export type Database = {
           expected_amount?: number | null
           id?: string
           recurrence?: string | null
+          remaining_amount?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -282,6 +367,7 @@ export type Database = {
           expected_amount?: number | null
           id?: string
           recurrence?: string | null
+          remaining_amount?: number | null
           status?: string
           title?: string
           updated_at?: string
@@ -400,11 +486,48 @@ export type Database = {
           },
         ]
       }
+      goal_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          goal_id: string
+          id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          goal_id: string
+          id?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          goal_id?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_transactions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
+          completed_at: string | null
           created_at: string
           current_amount: number
           id: string
+          is_completed: boolean
           is_primary: boolean
           name: string
           notes: string | null
@@ -414,9 +537,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           current_amount?: number
           id?: string
+          is_completed?: boolean
           is_primary?: boolean
           name: string
           notes?: string | null
@@ -426,9 +551,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           current_amount?: number
           id?: string
+          is_completed?: boolean
           is_primary?: boolean
           name?: string
           notes?: string | null

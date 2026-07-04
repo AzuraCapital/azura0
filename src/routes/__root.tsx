@@ -77,6 +77,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Azura Capital" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "Azura Capital" },
+      { name: "twitter:title", content: "Azura Capital" },
+      { property: "og:description", content: "Plataforma de gestão patrimonial. Acompanhe investimentos, contas bancárias e finanças pessoais com clareza, controlo e confiança." },
+      { name: "twitter:description", content: "Plataforma de gestão patrimonial. Acompanhe investimentos, contas bancárias e finanças pessoais com clareza, controlo e confiança." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/58e59b3c-1a91-4517-80a0-c8025fdb6da0" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/58e59b3c-1a91-4517-80a0-c8025fdb6da0" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

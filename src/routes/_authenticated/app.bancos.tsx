@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, SelectWithCustom } from "@/components/ui-kit";
-import { Plus, Trash2, Landmark, AlertTriangle, SlidersHorizontal, X as XIcon } from "lucide-react";
+import { ExportButton } from "@/components/ExportButton";
+import { exportToExcel, exportToPdf } from "@/lib/export";
+import { Plus, Trash2, Landmark, AlertTriangle, SlidersHorizontal, X as XIcon, Receipt, TrendingUp, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
 
 const BANK_URL = "https://azura0.lovable.app/app/bancos";

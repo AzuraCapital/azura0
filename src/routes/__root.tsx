@@ -81,8 +81,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "Azura Capital" },
       { property: "og:description", content: "Plataforma de gestão patrimonial. Acompanhe investimentos, contas bancárias e finanças pessoais com clareza, controlo e confiança." },
       { name: "twitter:description", content: "Plataforma de gestão patrimonial. Acompanhe investimentos, contas bancárias e finanças pessoais com clareza, controlo e confiança." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/KD41yxDQrGUUErtnePxzolMEdjz1/social-images/social-1783168848859-Captura_de_ecrã_2026-07-04_134028.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/KD41yxDQrGUUErtnePxzolMEdjz1/social-images/social-1783168848859-Captura_de_ecrã_2026-07-04_134028.webp" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/KD41yxDQrGUUErtnePxzolMEdjz1/social-images/social-1783168998448-111111111111111111111111111111.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/KD41yxDQrGUUErtnePxzolMEdjz1/social-images/social-1783168998448-111111111111111111111111111111.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

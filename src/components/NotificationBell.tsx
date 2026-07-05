@@ -43,13 +43,24 @@ export function NotificationBell() {
     const ev = n.calendar_events;
     const nome = ev?.title || "Evento financeiro";
     const valor = ev?.remaining_amount ?? ev?.amount ?? 0;
+    const isReceita = ev?.direction === "receita";
+
     if (n.alert_type === "atrasado") {
-      return { title: `Em atraso: ${nome}`, msg: `${formatKz(valor)} venceu em ${ev ? formatDate(ev.event_date) : ""} e continua por regularizar.` };
+      return {
+        title: `Em atraso: ${nome}`,
+        msg: `${formatKz(valor)} ${isReceita ? "ainda não foi recebido" : "continua por regularizar"}, previsto para ${ev ? formatDate(ev.event_date) : ""}.`,
+      };
     }
     if (n.alert_type === "no_dia") {
-      return { title: `Vence hoje: ${nome}`, msg: `${formatKz(valor)} vence hoje, ${ev ? formatDate(ev.event_date) : ""}.` };
+      return {
+        title: `${isReceita ? "A receber hoje" : "Vence hoje"}: ${nome}`,
+        msg: `${formatKz(valor)} ${isReceita ? "previsto para receber hoje" : "vence hoje"}, ${ev ? formatDate(ev.event_date) : ""}.`,
+      };
     }
-    return { title: `Vence em ${n.lead_days} dias: ${nome}`, msg: `${formatKz(valor)} vence em ${n.lead_days} dias, no dia ${ev ? formatDate(ev.event_date) : ""}.` };
+    return {
+      title: `${isReceita ? "A receber em" : "Vence em"} ${n.lead_days} dia${n.lead_days === 1 ? "" : "s"}: ${nome}`,
+      msg: `${formatKz(valor)} ${isReceita ? "previsto para receber" : "vence"} em ${n.lead_days} dia${n.lead_days === 1 ? "" : "s"}, no dia ${ev ? formatDate(ev.event_date) : ""}.`,
+    };
   };
 
   return (

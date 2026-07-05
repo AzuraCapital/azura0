@@ -339,7 +339,7 @@ function BankStatementModal({ bank, onClose }: { bank: any | null; onClose: () =
   const totalIn = rows.filter(r => r.positive).reduce((s, r) => s + r.amount, 0);
   const totalOut = rows.filter(r => !r.positive).reduce((s, r) => s + r.amount, 0);
 
-  const handleExport = (fmt: "pdf" | "excel", range: { from: string | null; to: string | null }) => {
+  const handleExport = async (fmt: "pdf" | "excel", range: { from: string | null; to: string | null }) => {
     const filtered = rows.filter(r => {
       if (range.from && r.date < range.from) return false;
       if (range.to && r.date > range.to) return false;
@@ -354,21 +354,27 @@ function BankStatementModal({ bank, onClose }: { bank: any | null; onClose: () =
       { header: `Valor (${bank.currency})`, key: (r: StatementRow) => (r.positive ? "+" : "-") + fmtMoney(r.amount, bank.currency), align: "right" as const },
     ];
     const period = range.from || range.to ? `${range.from ?? "início"} até ${range.to ?? "hoje"}` : "Todos os movimentos";
+    const filename = `extrato_${bank.bank_name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}`;
     const meta = {
       title: `Extrato Bancário — ${bank.bank_name}`,
-      subtitle: `Azura Capital · ${ACCOUNT_TYPES.find(t => t.value === bank.account_type)?.label ?? bank.account_type} · ${bank.currency}`,
+      subtitle: `${ACCOUNT_TYPES.find(t => t.value === bank.account_type)?.label ?? bank.account_type} · ${bank.currency}`,
       period,
-      filename: `extrato_${bank.bank_name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}`,
+      filename,
       summary: [
-        { label: "Saldo Atual", value: fmtMoney(Number(bank.current_balance), bank.currency) },
+        { label: "Saldo Atual", value: fmtMoney(Number(bank.current_balance), bank.currency), tone: (Number(bank.current_balance) < 0 ? "negative" : "primary") as any },
         { label: "Movimentos", value: String(filtered.length) },
-        { label: "Total Entradas", value: fmtMoney(fIn, bank.currency) },
-        { label: "Total Saídas", value: fmtMoney(fOut, bank.currency) },
-        { label: "Fluxo Líquido", value: fmtMoney(fIn - fOut, bank.currency) },
+        { label: "Entradas", value: fmtMoney(fIn, bank.currency), tone: "positive" as const },
+        { label: "Saídas", value: fmtMoney(fOut, bank.currency), tone: "negative" as const },
       ],
+      rowType: (r: StatementRow) => (r.positive ? "positive" as const : "negative" as const),
     };
-    if (fmt === "excel") exportToExcel(filtered, columns, meta);
-    else exportToPdf(filtered, columns, meta);
+    if (fmt === "excel") { exportToExcel(filtered, columns, meta); return; }
+    await exportToPdf(filtered, columns, meta);
+    return {
+      filename,
+      subject: `Extrato Bancário — ${bank.bank_name}`,
+      summary: `Banco: ${bank.bank_name} · Movimentos: ${filtered.length} · Entradas: ${fmtMoney(fIn, bank.currency)} · Saídas: ${fmtMoney(fOut, bank.currency)} · Saldo: ${fmtMoney(Number(bank.current_balance), bank.currency)}`,
+    };
   };
 
   return (

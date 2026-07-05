@@ -54,9 +54,8 @@ export function NotificationPreferences() {
 
   if (!prefs) return null;
 
-  return (
+return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold">Notificações do calendário</h3>
       {(Object.keys(DEFAULT_PREFS) as Array<keyof typeof DEFAULT_PREFS>).map((key) => (
         <div key={key} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
           <span className="text-sm">{LABELS[key]}</span>

@@ -6,14 +6,13 @@ import logoDark from "@/assets/azura-logo-dark.png.asset.json";
 
 // ============================================================
 // Azura Capital — Export System (PDF + Excel)
-// Modern, coloured, branded.
+// Modern, coloured, branded — estilo extrato bancário.
 // ============================================================
 
 export type ExportColumn<T> = {
   header: string;
   key: keyof T | ((row: T) => string | number);
   align?: "left" | "right" | "center";
-  /** Optional per-column formatter used only for XLSX cell values */
   excel?: (row: T) => string | number;
 };
 
@@ -23,25 +22,27 @@ export type ExportMeta = {
   period?: string;
   filename: string;
   summary?: { label: string; value: string; tone?: "default" | "positive" | "negative" | "primary" }[];
-  /** Optional accessor for row semantic type used for color coding */
   rowType?: (row: any) => "positive" | "negative" | "neutral" | "warning";
 };
 
 // Brand palette (RGB for jsPDF / hex for XLSX styling comments)
 const BRAND = {
   primary: [26, 140, 58] as [number, number, number],       // #1A8C3A
-  primarySoft: [232, 245, 236] as [number, number, number], // subtle green
-  positive: [34, 197, 94] as [number, number, number],      // #22C55E
+  primaryDark: [16, 92, 39] as [number, number, number],    // #105C27
+  primarySoft: [232, 245, 236] as [number, number, number],
+  positive: [22, 163, 74] as [number, number, number],      // #16A34A
   positiveSoft: [220, 252, 231] as [number, number, number],
-  negative: [239, 68, 68] as [number, number, number],      // #EF4444
+  negative: [220, 38, 38] as [number, number, number],       // #DC2626
   negativeSoft: [254, 226, 226] as [number, number, number],
-  warning: [234, 179, 8] as [number, number, number],
+  warning: [202, 138, 4] as [number, number, number],
   warningSoft: [254, 249, 195] as [number, number, number],
   neutral: [100, 116, 139] as [number, number, number],
   ink: [15, 23, 42] as [number, number, number],
-  inkSoft: [71, 85, 105] as [number, number, number],
+  inkSoft: [100, 116, 139] as [number, number, number],
   line: [226, 232, 240] as [number, number, number],
+  lineSoft: [241, 245, 249] as [number, number, number],
   bg: [248, 250, 252] as [number, number, number],
+  white: [255, 255, 255] as [number, number, number],
 };
 
 const getVal = <T,>(row: T, key: ExportColumn<T>["key"]) =>
@@ -71,7 +72,7 @@ async function loadLogoDataUrl(): Promise<string | null> {
 }
 
 // ============================================================
-// EXCEL
+// EXCEL (inalterado)
 // ============================================================
 export function exportToExcel<T>(rows: T[], columns: ExportColumn<T>[], meta: ExportMeta) {
   const aoa: any[][] = [
@@ -95,23 +96,16 @@ export function exportToExcel<T>(rows: T[], columns: ExportColumn<T>[], meta: Ex
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws["!cols"] = columns.map((c) => ({ wch: c.header.length > 18 ? c.header.length + 4 : 22 }));
-
-  // Simple row highlighting via cell comments/notes — visual color needs xlsx-style,
-  // but we set number/format basics + freeze the header row so it stays professional.
   ws["!freeze"] = { xSplit: 0, ySplit: dataStart } as any;
 
   const wb = XLSX.utils.book_new();
-  (wb as any).Props = {
-    Title: meta.title,
-    Author: "Azura Capital",
-    CreatedDate: new Date(),
-  };
+  (wb as any).Props = { Title: meta.title, Author: "Azura Capital", CreatedDate: new Date() };
   XLSX.utils.book_append_sheet(wb, ws, "Relatório");
   XLSX.writeFile(wb, `${meta.filename}.xlsx`);
 }
 
 // ============================================================
-// PDF
+// PDF — estilo extrato bancário
 // ============================================================
 export async function exportToPdf<T>(
   rows: T[],
@@ -122,52 +116,106 @@ export async function exportToPdf<T>(
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 40;
+  const contentW = pageWidth - margin * 2;
 
   const logo = await loadLogoDataUrl();
 
-  // ------ Header band ------
-  doc.setFillColor(...BRAND.primary);
-  doc.rect(0, 0, pageWidth, 90, "F");
+  // ============================================================
+  // FAIXA 1 — Identidade (fundo branco, como um cabeçalho de banco)
+  // ============================================================
+  const brandBandH = 64;
+  doc.setFillColor(...BRAND.white);
+  doc.rect(0, 0, pageWidth, brandBandH, "F");
 
+  let textX = margin;
   if (logo) {
     try {
-      doc.addImage(logo, "PNG", margin, 22, 46, 46);
+      doc.addImage(logo, "PNG", margin, 12, 40, 40);
+      textX = margin + 52;
     } catch {}
   }
 
-  doc.setTextColor(255, 255, 255);
+  doc.setFont("times", "bold");
+  doc.setFontSize(19);
+  doc.setTextColor(...BRAND.ink);
+  doc.text("AZURA CAPITAL", textX, 32);
+
+  doc.setFont("times", "italic");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...BRAND.inkSoft);
+  doc.text("Building the Future", textX, 46);
+
+  // linha fina a fechar a faixa branca
+  doc.setDrawColor(...BRAND.line);
+  doc.setLineWidth(0.6);
+  doc.line(0, brandBandH, pageWidth, brandBandH);
+
+  // ============================================================
+  // FAIXA 2 — Bloco verde: título do relatório + metadados
+  // ============================================================
+  const infoBandY = brandBandH;
+  const infoBandH = 62;
+  doc.setFillColor(...BRAND.primary);
+  doc.rect(0, infoBandY, pageWidth, infoBandH, "F");
+
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text("AZURA CAPITAL", logo ? margin + 60 : margin, 44);
+  doc.setFontSize(15);
+  doc.setTextColor(...BRAND.white);
+  doc.text(meta.title, margin, infoBandY + 26);
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(232, 245, 236);
-  doc.text(meta.title, logo ? margin + 60 : margin, 62);
-
-  // Right side: date
-  doc.setFontSize(8);
-  doc.setTextColor(232, 245, 236);
-  doc.text(format(new Date(), "dd/MM/yyyy HH:mm"), pageWidth - margin, 44, { align: "right" });
-  if (meta.period) doc.text(meta.period, pageWidth - margin, 60, { align: "right" });
-
-  let y = 120;
-
-  // ------ Sub-header ------
   if (meta.subtitle) {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(...BRAND.inkSoft);
-    doc.text(meta.subtitle, margin, y);
-    y += 18;
+    doc.setFontSize(9.5);
+    doc.setTextColor(...BRAND.primarySoft);
+    doc.text(meta.subtitle, margin, infoBandY + 42);
   }
 
-  // ------ Summary cards ------
+  // metadados à direita, estilo "label em cima, valor em baixo"
+  const metaColW = 130;
+  let metaX = pageWidth - margin - metaColW;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...BRAND.primarySoft);
+  doc.text("DATA DE EMISSÃO", metaX, infoBandY + 20, { align: "left" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...BRAND.white);
+  doc.text(format(new Date(), "dd/MM/yyyy HH:mm"), metaX, infoBandY + 32);
+
+  if (meta.period) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...BRAND.primarySoft);
+    doc.text("PERÍODO", metaX, infoBandY + 48);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...BRAND.white);
+    doc.text(meta.period, metaX, infoBandY + 60, { maxWidth: metaColW });
+  }
+
+  let y = infoBandY + infoBandH + 26;
+
+  // ============================================================
+  // Barra de secção — "EXTRATO DE MOVIMENTOS"
+  // ============================================================
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...BRAND.primaryDark);
+  doc.text("EXTRATO DE MOVIMENTOS", pageWidth / 2, y, { align: "center" });
+  y += 8;
+  doc.setDrawColor(...BRAND.primary);
+  doc.setLineWidth(1.2);
+  doc.line(pageWidth / 2 - 60, y, pageWidth / 2 + 60, y);
+  y += 26;
+
+  // ============================================================
+  // Cards de resumo
+  // ============================================================
   if (meta.summary?.length) {
     const cardsPerRow = Math.min(meta.summary.length, 4);
-    const gap = 10;
-    const cardW = (pageWidth - margin * 2 - gap * (cardsPerRow - 1)) / cardsPerRow;
-    const cardH = 54;
+    const gap = 12;
+    const cardW = (contentW - gap * (cardsPerRow - 1)) / cardsPerRow;
+    const cardH = 58;
 
     meta.summary.forEach((s, i) => {
       const col = i % cardsPerRow;
@@ -188,89 +236,88 @@ export async function exportToPdf<T>(
 
       doc.setFillColor(...bg);
       doc.setDrawColor(...BRAND.line);
-      doc.roundedRect(x, cy, cardW, cardH, 8, 8, "FD");
+      doc.setLineWidth(0.5);
+      doc.roundedRect(x, cy, cardW, cardH, 9, 9, "FD");
 
-      // accent bar
+      // barra de destaque lateral
       doc.setFillColor(...tone);
-      doc.roundedRect(x, cy, 4, cardH, 2, 2, "F");
+      doc.roundedRect(x, cy, 3.5, cardH, 1.5, 1.5, "F");
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setTextColor(...BRAND.inkSoft);
-      doc.text(s.label.toUpperCase(), x + 12, cy + 18);
+      doc.text(s.label.toUpperCase(), x + 14, cy + 20);
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
+      doc.setFontSize(13);
       doc.setTextColor(...tone);
-      doc.text(String(s.value), x + 12, cy + 38, { maxWidth: cardW - 20 });
+      doc.text(String(s.value), x + 14, cy + 42, { maxWidth: cardW - 24 });
     });
 
     const rows2 = Math.ceil(meta.summary.length / cardsPerRow);
-    y += rows2 * (cardH + gap) + 8;
+    y += rows2 * (cardH + gap) + 10;
   }
 
-  // ------ Table ------
+  // ============================================================
+  // Tabela de movimentos
+  // ============================================================
   autoTable(doc, {
     startY: y,
     head: [columns.map((c) => c.header)],
     body: rows.map((r) => columns.map((c) => String(getVal(r, c.key) ?? ""))),
     styles: {
       fontSize: 8.5,
-      cellPadding: 6,
+      cellPadding: 7,
       textColor: BRAND.ink as any,
-      lineColor: BRAND.line as any,
-      lineWidth: 0.3,
+      lineColor: BRAND.lineSoft as any,
+      lineWidth: 0.4,
+      font: "helvetica",
     },
     headStyles: {
-      fillColor: BRAND.primary as any,
-      textColor: [255, 255, 255] as any,
+      fillColor: BRAND.primaryDark as any,
+      textColor: BRAND.white as any,
       fontStyle: "bold",
-      fontSize: 9,
+      fontSize: 8.5,
       halign: "left",
+      cellPadding: 8,
     },
-    alternateRowStyles: { fillColor: [249, 250, 251] as any },
+    alternateRowStyles: { fillColor: BRAND.bg as any },
     columnStyles: columns.reduce((acc, c, i) => {
-      if (c.align) acc[i] = { halign: c.align };
+      acc[i] = { halign: c.align ?? "left", ...(i === columns.length - 1 ? { fontStyle: "bold" } : {}) };
       return acc;
     }, {} as Record<number, any>),
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
-      if (data.section !== "body" || !meta.rowType) return;
-      const type = meta.rowType(rows[data.row.index]);
-      if (type === "positive") {
-        data.cell.styles.textColor = BRAND.positive as any;
-      } else if (type === "negative") {
-        data.cell.styles.textColor = BRAND.negative as any;
-      } else if (type === "warning") {
-        data.cell.styles.textColor = BRAND.warning as any;
-      }
-      // Only color the last (amount) column strongly; others stay ink
+      if (data.section !== "body") return;
+      // zebra mais suave sobre a cor base
       if (data.column.index !== columns.length - 1) {
         data.cell.styles.textColor = BRAND.ink as any;
+        return;
       }
-      // Add a soft left indicator on first cell
-      if (data.column.index === 0) {
-        const tone =
-          type === "positive" ? BRAND.positiveSoft
-          : type === "negative" ? BRAND.negativeSoft
-          : type === "warning" ? BRAND.warningSoft
-          : null;
-        if (tone) data.cell.styles.fillColor = tone as any;
-      }
+      if (!meta.rowType) return;
+      const type = meta.rowType(rows[data.row.index]);
+      if (type === "positive") data.cell.styles.textColor = BRAND.positive as any;
+      else if (type === "negative") data.cell.styles.textColor = BRAND.negative as any;
+      else if (type === "warning") data.cell.styles.textColor = BRAND.warning as any;
     },
     didDrawPage: () => {
-      // Footer
       const pageCount = doc.getNumberOfPages();
       const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
+
       doc.setDrawColor(...BRAND.line);
-      doc.setLineWidth(0.4);
-      doc.line(margin, pageHeight - 34, pageWidth - margin, pageHeight - 34);
+      doc.setLineWidth(0.6);
+      doc.line(margin, pageHeight - 40, pageWidth - margin, pageHeight - 40);
+
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...BRAND.inkSoft);
+      doc.text("Documento processado por computador — não carece de assinatura", margin, pageHeight - 24);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(...BRAND.inkSoft);
-      doc.text("Azura Capital · Relatório Financeiro Oficial", margin, pageHeight - 20);
-      doc.text(`Página ${currentPage} de ${pageCount}`, pageWidth - margin, pageHeight - 20, { align: "right" });
+      doc.text("Azura Capital · Relatório Financeiro Oficial", margin, pageHeight - 12);
+      doc.text(`Página ${currentPage} de ${pageCount}`, pageWidth - margin, pageHeight - 12, { align: "right" });
     },
   });
 
@@ -280,8 +327,7 @@ export async function exportToPdf<T>(
 }
 
 // ============================================================
-// EMAIL via mailto (opens user's mail client with pre-filled body)
-// The PDF is already downloaded — user attaches manually.
+// EMAIL via mailto (inalterado)
 // ============================================================
 export function openEmailComposer(opts: {
   to: string;

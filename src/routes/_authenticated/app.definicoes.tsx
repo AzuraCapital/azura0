@@ -4,14 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOut } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { PageHeader, GhostButton, Field, TextInput, PrimaryButton } from "@/components/ui-kit";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { Moon, Sun, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
 const DEF_URL = "https://azura0.lovable.app/app/definicoes";
 const DEF_TITLE = "Definições — Azura Capital";
 const DEF_DESC = "Configure a sua conta, preferências de perfil, moeda predefinida e opções da aplicação Azura Capital.";
-
 export const Route = createFileRoute("/_authenticated/app/definicoes")({
   head: () => ({
     meta: [
@@ -26,7 +25,6 @@ export const Route = createFileRoute("/_authenticated/app/definicoes")({
   }),
   component: Page,
 });
-
 function Page() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -34,20 +32,17 @@ function Page() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [saving, setSaving] = useState(false);
-
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
     enabled: !!user,
     queryFn: async () => (await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle()).data,
   });
-
   useEffect(() => {
     if (profile) {
       setFirstName((profile as any).first_name ?? "");
       setLastName((profile as any).last_name ?? "");
     }
   }, [profile]);
-
   const save = async () => {
     if (!user) return;
     setSaving(true);
@@ -55,13 +50,10 @@ function Page() {
     setSaving(false);
     if (error) toast.error(error.message); else toast.success("Perfil atualizado");
   };
-
   const handleSignOut = async () => { await signOut(); navigate({ to: "/" }); };
-
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <PageHeader title="Definições" subtitle="Conta e preferências" />
-
       <div className="glass rounded-3xl p-6 space-y-4">
         <h2 className="font-semibold">Perfil</h2>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -72,7 +64,6 @@ function Page() {
         {user?.phone && <Field label="Telefone"><TextInput value={user.phone} disabled /></Field>}
         <PrimaryButton onClick={save} disabled={saving}>Guardar</PrimaryButton>
       </div>
-
       <div className="glass rounded-3xl p-6 space-y-4">
         <h2 className="font-semibold">Aparência</h2>
         <div className="flex gap-2">
@@ -84,7 +75,10 @@ function Page() {
           </button>
         </div>
       </div>
-
+      <div className="glass rounded-3xl p-6 space-y-4">
+        <h2 className="font-semibold">Notificações</h2>
+        <NotificationPreferences />
+      </div>
       <div className="glass rounded-3xl p-6">
         <GhostButton onClick={handleSignOut}><LogOut className="h-4 w-4 inline mr-2" />Terminar sessão</GhostButton>
       </div>

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useAuth, signOut } from "@/lib/auth";
 
 const nav = [
@@ -132,6 +133,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Logo className="h-7" />
           </Link>
           <div className="ml-auto flex items-center gap-2">
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>

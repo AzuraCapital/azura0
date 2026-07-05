@@ -41,12 +41,17 @@ Deno.serve(async () => {
   for (const e of events ?? []) {
     const isOverdue = e.event_date < todayStr;
     const isToday = e.event_date === todayStr;
-    const alertType = isOverdue ? "atrasado" : isToday ? "no_dia" : "aviso_previo";
-    const leadDays = isOverdue ? -1 : isToday ? 0 : REMINDER_DAYS;
 
-    // TODO: quando tiveres domínio próprio no Resend, reintroduzir aqui
-    // o insert com channel: "email" + chamada a sendEmail(). Ver conversa
-    // anterior para o código completo já pronto.
+    // Distância real em dias — não assume constante fixa
+    const eventDate = new Date(e.event_date + "T00:00:00Z");
+    const todayDate = new Date(todayStr + "T00:00:00Z");
+    const diffDays = Math.round((eventDate.getTime() - todayDate.getTime()) / 86400000);
+
+    const alertType = isOverdue ? "atrasado" : isToday ? "no_dia" : "aviso_previo";
+    const leadDays = diffDays;
+
+    // notify_date garante 1 notificação por dia por evento+tipo+canal,
+    // em vez de bloquear repetição para sempre
     const { error: appErr } = await supabase.from("notifications").insert({
       user_id: e.user_id,
       related_event_id: e.id,
@@ -54,6 +59,7 @@ Deno.serve(async () => {
       channel: "app",
       lead_days: leadDays,
       is_active: true,
+      notify_date: todayStr,
     });
 
     if (!appErr) created++;

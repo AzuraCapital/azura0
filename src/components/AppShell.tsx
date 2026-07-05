@@ -124,19 +124,52 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3 border-b border-border/50 bg-background/60 backdrop-blur-xl">
-          <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-accent">
+        <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+          <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-accent" aria-label="Abrir menu">
             <Menu className="h-6 w-6" />
           </button>
-          <div className="ml-auto">
+          <Link to="/app" className="lg:hidden flex items-center">
+            <Logo className="h-7" />
+          </Link>
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
           </div>
         </header>
 
-        <main className="px-4 md:px-8 py-6">
+        <main className="px-3 sm:px-4 md:px-8 py-4 sm:py-6 pb-24 lg:pb-6">
           <div className="animate-fade-up">{children}</div>
         </main>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur-xl border-t border-border/70 pb-[env(safe-area-inset-bottom)]">
+        <ul className="grid grid-cols-5">
+          {[
+            { to: "/app", label: "Início", icon: LayoutDashboard, exact: true },
+            { to: "/app/bancos", label: "Bancos", icon: Landmark },
+            { to: "/app/financas", label: "Finanças", icon: Receipt },
+            { to: "/app/investimentos", label: "Invest.", icon: TrendingUp },
+            { to: "/app/historico", label: "Histórico", icon: History },
+          ].map((item) => {
+            const active = isActive(item.to, (item as any).exact);
+            return (
+              <li key={item.to}>
+                <Link
+                  to={item.to}
+                  className={`flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition ${
+                    active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className={`grid place-items-center h-8 w-12 rounded-full transition ${active ? "bg-primary/10" : ""}`}>
+                    <item.icon className="h-4 w-4" />
+                  </span>
+                  <span className="truncate max-w-[64px]">{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }

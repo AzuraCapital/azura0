@@ -141,20 +141,27 @@ function Page() {
       { header: "Detalhe", key: (r: Row) => r.detail },
       { header: "Valor (AOA)", key: (r: Row) => (r.positive ? "+" : "-") + formatKz(r.amount), align: "right" as const },
     ];
+    const filename = `historico_financeiro_${format(new Date(), "yyyyMMdd_HHmm")}`;
     const meta = {
       title: "Histórico Financeiro",
-      subtitle: "Azura Capital — Extrato completo de movimentos",
+      subtitle: "Extrato completo de movimentos",
       period,
-      filename: `historico_financeiro_${format(new Date(), "yyyyMMdd_HHmm")}`,
+      filename,
       summary: [
-        { label: "Total de Movimentos", value: String(list.length) },
-        { label: "Total Receitas", value: formatKz(rec) },
-        { label: "Total Despesas", value: formatKz(desp) },
-        { label: "Saldo Líquido", value: formatKz(rec - desp) },
+        { label: "Movimentos", value: String(list.length), tone: "primary" as const },
+        { label: "Receitas", value: formatKz(rec), tone: "positive" as const },
+        { label: "Despesas", value: formatKz(desp), tone: "negative" as const },
+        { label: "Saldo Líquido", value: formatKz(rec - desp), tone: (rec - desp) >= 0 ? "positive" as const : "negative" as const },
       ],
+      rowType: (r: Row) => (r.positive ? "positive" as const : "negative" as const),
     };
-    if (fmt === "excel") exportToExcel(list, columns, meta);
-    else exportToPdf(list, columns, meta);
+    if (fmt === "excel") { exportToExcel(list, columns, meta); return; }
+    await exportToPdf(list, columns, meta);
+    return {
+      filename,
+      subject: `Histórico Financeiro — ${period}`,
+      summary: `Movimentos: ${list.length} · Receitas: ${formatKz(rec)} · Despesas: ${formatKz(desp)} · Saldo: ${formatKz(rec - desp)}`,
+    };
   };
 
   return (

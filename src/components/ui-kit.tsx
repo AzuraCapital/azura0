@@ -51,12 +51,12 @@ export function GhostButton({ children, ...rest }: React.ButtonHTMLAttributes<HT
 
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
+    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end sm:justify-between gap-3 mb-6">
       <div className="min-w-0">
-        <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
-        {subtitle && <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>}
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate">{title}</h1>
+        {subtitle && <p className="text-muted-foreground mt-1 text-xs sm:text-sm">{subtitle}</p>}
       </div>
-      {action}
+      {action && <div className="shrink-0 [&>button]:w-full sm:[&>button]:w-auto">{action}</div>}
     </div>
   );
 }

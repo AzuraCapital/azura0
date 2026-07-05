@@ -7,7 +7,7 @@ import { formatDate } from "@/lib/format";
 import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput, SelectWithCustom } from "@/components/ui-kit";
 import { ExportButton } from "@/components/ExportButton";
 import { exportToExcel, exportToPdf } from "@/lib/export";
-import { Plus, Trash2, Landmark, AlertTriangle, SlidersHorizontal, X as XIcon, Receipt, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Trash2, Landmark, AlertTriangle, SlidersHorizontal, X as XIcon, Receipt, TrendingUp, TrendingDown, FilterX } from "lucide-react";
 import { toast } from "sonner";
 
 const BANK_URL = "https://azura0.lovable.app/app/bancos";
@@ -38,6 +38,8 @@ const ACCOUNT_TYPES = [
   { value: "salario", label: "Salário" },
   { value: "negocio", label: "Negócio" },
 ];
+
+const STATEMENT_TYPES = ["Receita", "Despesa", "Compra de Ativo", "Venda de Ativo", "Calendário", "Ajuste manual"];
 
 const fmtMoney = (v: number, currency = "AOA") => {
   try { return new Intl.NumberFormat("pt-PT", { style: "currency", currency, maximumFractionDigits: 2 }).format(v); }
@@ -305,6 +307,11 @@ type StatementRow = {
 function BankStatementModal({ bank, onClose }: { bank: any | null; onClose: () => void }) {
   const { user } = useAuth();
 
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [direction, setDirection] = useState<"todos" | "entradas" | "saidas">("todos");
+  const [typeFilter, setTypeFilter] = useState<string>("todos");
+
   const { data: movements } = useQuery({
     queryKey: ["bank_statement", bank?.id],
     enabled: !!bank && !!user,
@@ -333,14 +340,29 @@ function BankStatementModal({ bank, onClose }: { bank: any | null; onClose: () =
     },
   });
 
+  const allRows = movements ?? [];
+
+  const visibleRows = useMemo(() => {
+    return allRows.filter(r => {
+      if (dateFrom && r.date < dateFrom) return false;
+      if (dateTo && r.date > dateTo) return false;
+      if (direction === "entradas" && !r.positive) return false;
+      if (direction === "saidas" && r.positive) return false;
+      if (typeFilter !== "todos" && r.type !== typeFilter) return false;
+      return true;
+    });
+  }, [allRows, dateFrom, dateTo, direction, typeFilter]);
+
+  const hasActiveFilters = !!dateFrom || !!dateTo || direction !== "todos" || typeFilter !== "todos";
+  const clearFilters = () => { setDateFrom(""); setDateTo(""); setDirection("todos"); setTypeFilter("todos"); };
+
   if (!bank) return null;
 
-  const rows = movements ?? [];
-  const totalIn = rows.filter(r => r.positive).reduce((s, r) => s + r.amount, 0);
-  const totalOut = rows.filter(r => !r.positive).reduce((s, r) => s + r.amount, 0);
+  const totalIn = visibleRows.filter(r => r.positive).reduce((s, r) => s + r.amount, 0);
+  const totalOut = visibleRows.filter(r => !r.positive).reduce((s, r) => s + r.amount, 0);
 
   const handleExport = async (fmt: "pdf" | "excel", range: { from: string | null; to: string | null }) => {
-    const filtered = rows.filter(r => {
+    const filtered = allRows.filter(r => {
       if (range.from && r.date < range.from) return false;
       if (range.to && r.date > range.to) return false;
       return true;
@@ -395,15 +417,52 @@ function BankStatementModal({ bank, onClose }: { bank: any | null; onClose: () =
           </div>
         </div>
 
+        {/* Filtros */}
+        <div className="glass rounded-2xl p-3 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="De"><TextInput type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} /></Field>
+            <Field label="Até"><TextInput type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} /></Field>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {(["todos", "entradas", "saidas"] as const).map(d => (
+              <button
+                key={d}
+                onClick={() => setDirection(d)}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${direction === d ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}
+              >
+                {d === "todos" ? "Todos" : d === "entradas" ? "Entradas" : "Saídas"}
+              </button>
+            ))}
+          </div>
+
+          <div>
+            <SelectInput value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+              <option value="todos">Todos os tipos</option>
+              {STATEMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </SelectInput>
+          </div>
+
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive">
+              <FilterX className="h-3.5 w-3.5" /> Limpar filtros
+            </button>
+          )}
+        </div>
+
         <div className="flex items-center justify-between">
-          <div className="text-xs text-muted-foreground">{rows.length} movimento(s)</div>
+          <div className="text-xs text-muted-foreground">
+            {visibleRows.length} de {allRows.length} movimento(s)
+          </div>
           <ExportButton onExport={handleExport} label="Exportar Extrato" />
         </div>
 
         <div className="max-h-[420px] overflow-y-auto rounded-2xl border border-border/50 divide-y divide-border/50">
-          {rows.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">Sem movimentos nesta conta.</div>
-          ) : rows.map(r => (
+          {visibleRows.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              {allRows.length === 0 ? "Sem movimentos nesta conta." : "Sem movimentos para os filtros selecionados."}
+            </div>
+          ) : visibleRows.map(r => (
             <div key={r.id} className="flex items-center gap-3 p-3">
               <div className={`rounded-full p-2 shrink-0 ${r.positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
                 {r.positive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}

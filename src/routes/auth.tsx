@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
-import { Loader2, Mail, Lock, User as UserIcon, Phone } from "lucide-react";
+import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -41,13 +41,12 @@ export const Route = createFileRoute("/auth")({
 const signupSchema = z.object({
   first_name: z.string().trim().min(1, "Obrigatório").max(50),
   last_name: z.string().trim().min(1, "Obrigatório").max(50),
-  identifier: z.string().trim().min(1, "Email ou telefone obrigatório"),
+  identifier: z.string().trim().email("Email inválido"),
   password: z.string().min(8, "Mínimo 8 caracteres").regex(/[A-Z]/, "Inclua uma maiúscula").regex(/[0-9]/, "Inclua um número"),
   confirm: z.string(),
 }).refine(d => d.password === d.confirm, { path: ["confirm"], message: "Passwords não coincidem" });
 
 function isEmail(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
-function isAngolaPhone(v: string) { return /^(\+?244)?[\s-]?9\d{8}$/.test(v.replace(/\s/g, "")); }
 
 function AuthPage() {
   const { mode } = Route.useSearch();
@@ -61,11 +60,10 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const id = form.identifier.trim();
-      const credentials = isEmail(id)
-        ? { email: id, password: form.password }
-        : { phone: id.startsWith("+") ? id : `+244${id.replace(/^244/, "")}`, password: form.password };
-      const { error } = await supabase.auth.signInWithPassword(credentials);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: form.identifier.trim(),
+        password: form.password,
+      });
       if (error) throw error;
       toast.success("Sessão iniciada");
       navigate({ to: "/app" });
@@ -78,15 +76,14 @@ function AuthPage() {
     e.preventDefault();
     const parsed = signupSchema.safeParse(form);
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
-    const id = form.identifier.trim();
-    if (!isEmail(id) && !isAngolaPhone(id)) { toast.error("Email ou telefone Angola inválido"); return; }
     setLoading(true);
     try {
       const meta = { first_name: form.first_name, last_name: form.last_name };
-      const opts = isEmail(id)
-        ? { email: id, password: form.password, options: { data: meta, emailRedirectTo: `${window.location.origin}/app` } }
-        : { phone: id.startsWith("+") ? id : `+244${id.replace(/^244/, "")}`, password: form.password, options: { data: meta } };
-      const { data, error } = await supabase.auth.signUp(opts as any);
+      const { data, error } = await supabase.auth.signUp({
+        email: form.identifier.trim(),
+        password: form.password,
+        options: { data: meta, emailRedirectTo: `${window.location.origin}/app` },
+      });
       if (error) throw error;
       if (data.session) {
         toast.success("Conta criada");
@@ -170,9 +167,9 @@ function AuthPage() {
               </div>
             )}
             <Input
-              icon={mode === "forgot" ? Mail : isAngolaPhone(form.identifier) ? Phone : Mail}
-              type="text"
-              placeholder={mode === "forgot" ? "Email" : "Email ou +244 9XX XXX XXX"}
+              icon={Mail}
+              type="email"
+              placeholder="Email"
               value={form.identifier}
               onChange={update("identifier")}
               required

@@ -8,6 +8,7 @@ import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, Select
 import { ExportButton } from "@/components/ExportButton";
 import { exportToExcel, exportToPdf } from "@/lib/export";
 import { Plus, Trash2, Landmark, AlertTriangle, SlidersHorizontal, X as XIcon, Receipt, TrendingUp, TrendingDown, FilterX } from "lucide-react";
+import { BankLogo } from "@/components/BankLogo";
 import { toast } from "sonner";
 
 const BANK_URL = "https://azura0.lovable.app/app/bancos";

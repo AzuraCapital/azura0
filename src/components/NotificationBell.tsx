@@ -76,9 +76,9 @@ export function NotificationBell() {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto glass rounded-2xl shadow-xl z-50 divide-y divide-border/50">
-            <div className="p-3 flex items-center justify-between sticky top-0 bg-card/95 backdrop-blur">
+          <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-2 w-[min(22rem,calc(100vw-1rem))] max-h-[70vh] overflow-y-auto rounded-2xl shadow-2xl z-50 divide-y divide-border bg-popover text-popover-foreground border border-border">
+            <div className="p-3 flex items-center justify-between sticky top-0 bg-popover border-b border-border">
               <span className="text-sm font-semibold">Notificações</span>
               {unread > 0 && (
                 <button onClick={markAllRead} className="text-xs text-primary hover:underline">Marcar todas como lidas</button>

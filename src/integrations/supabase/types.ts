@@ -637,6 +637,30 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          atrasado: boolean
+          aviso_previo: boolean
+          no_dia: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          atrasado?: boolean
+          aviso_previo?: boolean
+          no_dia?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          atrasado?: boolean
+          aviso_previo?: boolean
+          no_dia?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           alert_type: string
@@ -645,6 +669,7 @@ export type Database = {
           id: string
           is_active: boolean
           lead_days: number | null
+          notify_date: string
           read_at: string | null
           related_event_id: string | null
           updated_at: string
@@ -657,6 +682,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           lead_days?: number | null
+          notify_date?: string
           read_at?: string | null
           related_event_id?: string | null
           updated_at?: string
@@ -669,6 +695,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           lead_days?: number | null
+          notify_date?: string
           read_at?: string | null
           related_event_id?: string | null
           updated_at?: string

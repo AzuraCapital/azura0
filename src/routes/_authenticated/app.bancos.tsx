@@ -8,6 +8,7 @@ import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, Select
 import { ExportButton } from "@/components/ExportButton";
 import { exportToExcel, exportToPdf } from "@/lib/export";
 import { Plus, Trash2, Landmark, AlertTriangle, SlidersHorizontal, X as XIcon, Receipt, TrendingUp, TrendingDown, FilterX } from "lucide-react";
+import { BankLogo } from "@/components/BankLogo";
 import { toast } from "sonner";
 
 const BANK_URL = "https://azura0.lovable.app/app/bancos";
@@ -101,7 +102,7 @@ function Page() {
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setFilter("todos")} className={`rounded-full px-4 py-1.5 text-sm font-medium ${filter === "todos" ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>Todos</button>
           {(accounts ?? []).map((a: any) => (
-            <button key={a.id} onClick={() => setFilter(a.id)} className={`rounded-full px-4 py-1.5 text-sm font-medium ${filter === a.id ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>{a.bank_name}</button>
+            <button key={a.id} onClick={() => setFilter(a.id)} className={`rounded-full pl-1 pr-4 py-1 text-sm font-medium inline-flex items-center gap-2 ${filter === a.id ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}><BankLogo name={a.bank_name} size={24} />{a.bank_name}</button>
           ))}
         </div>
       )}
@@ -112,10 +113,13 @@ function Page() {
           const neg = Number(a.current_balance) < 0;
           return (
             <div key={a.id} className={`glass rounded-3xl p-5 hover:scale-[1.01] transition ${neg ? "border border-destructive/40" : ""}`}>
-              <div className="flex items-start justify-between">
-                <div className="min-w-0">
-                  <div className="text-xs uppercase tracking-wide text-primary font-medium truncate">{a.bank_name}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{ACCOUNT_TYPES.find(t => t.value === a.account_type)?.label ?? a.account_type}</div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <BankLogo name={a.bank_name} size={44} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-foreground truncate">{a.bank_name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{ACCOUNT_TYPES.find(t => t.value === a.account_type)?.label ?? a.account_type}</div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button onClick={() => setStatementBank(a)} aria-label="Ver extrato" title="Ver extrato" className="text-muted-foreground hover:text-primary"><Receipt className="h-4 w-4" /></button>

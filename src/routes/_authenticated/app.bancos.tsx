@@ -102,7 +102,7 @@ function Page() {
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setFilter("todos")} className={`rounded-full px-4 py-1.5 text-sm font-medium ${filter === "todos" ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>Todos</button>
           {(accounts ?? []).map((a: any) => (
-            <button key={a.id} onClick={() => setFilter(a.id)} className={`rounded-full px-4 py-1.5 text-sm font-medium ${filter === a.id ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}>{a.bank_name}</button>
+            <button key={a.id} onClick={() => setFilter(a.id)} className={`rounded-full pl-1 pr-4 py-1 text-sm font-medium inline-flex items-center gap-2 ${filter === a.id ? "gradient-primary text-white" : "bg-secondary hover:bg-secondary/70"}`}><BankLogo name={a.bank_name} size={24} />{a.bank_name}</button>
           ))}
         </div>
       )}

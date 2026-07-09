@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, PrimaryButton, GhostButton, Modal, Field, TextInput, SelectInput } from "@/components/ui-kit";
-import { Plus, Trash2, Vault } from "lucide-react";
+import { Plus, Trash2, Vault, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const CUS_URL = "https://azura0.lovable.app/app/custodia";
@@ -30,6 +30,7 @@ function Page() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
 
   const { data: custodies } = useQuery({
     queryKey: ["custody_accounts", user?.id],
@@ -56,6 +57,12 @@ function Page() {
     qc.invalidateQueries({ queryKey: ["custody_accounts"] });
   };
 
+  const closeModal = () => {
+    setOpen(false);
+    setEditing(null);
+    qc.invalidateQueries({ queryKey: ["custody_accounts"] });
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <PageHeader
@@ -78,11 +85,9 @@ function Page() {
                  <div className="space-y-1 mt-1">
 
     <div className="text-xs text-muted-foreground">
-
         {c.bank_accounts
             ? `Banco: ${c.bank_accounts.bank_name}`
             : "Sem banco associado"}
-
     </div>
 
     <div className="text-xs text-muted-foreground">
@@ -90,43 +95,52 @@ function Page() {
     </div>
 
     <div className="font-semibold text-primary">
-
         {new Intl.NumberFormat("pt-PT", {
             style: "currency",
             currency: "AOA"
         }).format(
-
             (c.assets ?? []).reduce(
-
                 (total: number, asset: any) =>
                     total + Number(asset.invested_amount ?? 0),
-
                 0
-
             )
-
         )}
-
     </div>
 
 </div>
                 </div>
               </div>
-              <button onClick={() => del(c.id)} className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="h-4 w-4" /></button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button onClick={() => setEditing(c)} className="text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></button>
+                <button onClick={() => del(c.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      <CustodyModal open={open} onClose={() => { setOpen(false); qc.invalidateQueries({ queryKey: ["custody_accounts"] }); }} />
+      <CustodyModal open={open} onClose={closeModal} />
+      <CustodyModal open={!!editing} onClose={closeModal} custody={editing} />
     </div>
   );
 }
 
-function CustodyModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CustodyModal({ open, onClose, custody }: { open: boolean; onClose: () => void; custody?: any }) {
   const { user } = useAuth();
+  const isEditing = !!custody;
   const [form, setForm] = useState({ name: "", bank_account_id: "" });
   const [loading, setLoading] = useState(false);
+
+  // Sincroniza o formulário sempre que abre em modo edição (ou reinicia em modo criação)
+  const custodyId = custody?.id ?? null;
+  const [lastLoadedId, setLastLoadedId] = useState<string | null>(null);
+  if (open && custodyId !== lastLoadedId) {
+    setForm({ name: custody?.name ?? "", bank_account_id: custody?.bank_account_id ?? "" });
+    setLastLoadedId(custodyId);
+  }
+  if (!open && lastLoadedId !== null) {
+    setLastLoadedId(null);
+  }
 
   const { data: banks } = useQuery({
     queryKey: ["bank_accounts", user?.id],
@@ -137,6 +151,21 @@ function CustodyModal({ open, onClose }: { open: boolean; onClose: () => void })
   const save = async () => {
     if (!user || !form.name.trim()) { toast.error("Indique o nome"); return; }
     setLoading(true);
+
+    if (isEditing) {
+      const { error } = await supabase
+        .from("custody_accounts")
+        .update({
+          name: form.name.trim(),
+          bank_account_id: form.bank_account_id || null,
+        } as never)
+        .eq("id", custody.id);
+      setLoading(false);
+      if (error) toast.error(error.message);
+      else { toast.success("Custódia atualizada"); onClose(); }
+      return;
+    }
+
     const { error } = await supabase.from("custody_accounts").insert({
       user_id: user.id,
       name: form.name.trim(),
@@ -148,7 +177,7 @@ function CustodyModal({ open, onClose }: { open: boolean; onClose: () => void })
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Nova Conta Custódia">
+    <Modal open={open} onClose={onClose} title={isEditing ? "Editar Conta Custódia" : "Nova Conta Custódia"}>
       <div className="space-y-3">
         <Field label="Nome"><TextInput value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="ex.: BFA CM" /></Field>
         <Field label="Banco associado">

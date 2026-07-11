@@ -319,11 +319,14 @@ function OperationModal({ assetId, asset, onClose }: { assetId: string | null; a
     if (!user || !assetId) return;
     if (total <= 0) { toast.error("Valor obrigatório"); return; }
     if (form.type === "venda" && qty > 0 && qty > currentQty) { toast.error(`Só pode vender até ${fmtQty(currentQty)}`); return; }
+    if (form.type === "venda" && total > currentInvested) { toast.error(`Só pode vender até ${fmtMoney(currentInvested, currency)} de valor investido`); return; }
     setLoading(true);
     const newQty = qty > 0 ? (form.type === "compra" ? currentQty + qty : currentQty - qty) : currentQty;
+    // Venda reduz o valor investido pelo valor exato da venda (não pelo custo médio proporcional),
+    // para que "valor investido" e o crédito no banco fiquem sempre consistentes entre si.
     const newInvested = form.type === "compra"
       ? currentInvested + total
-      : Math.max(0, currentInvested - (qty > 0 && currentQty > 0 ? (currentInvested * qty) / currentQty : total));
+      : Math.max(0, currentInvested - total);
     const { error: e1 } = await supabase.from("asset_transactions").insert({
       user_id: user.id, asset_id: assetId, type: form.type,
       quantity: qty > 0 ? qty : null,
